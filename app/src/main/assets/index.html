@@ -268,6 +268,10 @@ const BLE={dev:null,chr:null,rx:null,readMode:false,noResp:false,waiters:[],busy
 function dlog(m){BLE.log.push(new Date().toLocaleTimeString()+'  '+m);if(BLE.log.length>200)BLE.log.shift()}
 function onNotify(e){handleData(new Uint8Array(e.target.value.buffer))}
 function handleData(v){
+  if(v[0]===0x50&&v[1]===0x5a){ // "PZ" = sinal de vida do módulo, o app oficial ignora
+    BLE.pz=(BLE.pz||0)+1; if(BLE.pz===1||BLE.pz%30===0)dlog('sinal de vida PZ #'+BLE.pz+': '+hex(v.slice(0,16)));
+    return;
+  }
   dlog('← '+hex(v));
   if(v[0]!==0x41) return;
   const w=BLE.waiters.findIndex(x=>x.code===v[1]);
@@ -340,16 +344,37 @@ async function setupGatt(dev){
   }catch(e){e.step=step;throw e}
 }
 const NATIVE=!!window.AndroidBLE;
+/* senha: o app oficial manda 'S','0','0',senha(2 bytes),'0','e','0' logo após conectar. Padrão 1234 */
+function passFrame(pw){const n=parseInt(pw,10)||0;return new Uint8Array([0x53,0x30,0x30,(n>>8)&255,n&255,0x30,0x65,0x30])}
+async function authenticate(){
+  const pw=LS.get('dsp_pass','1234');
+  await sleep(500);
+  dlog('enviando senha '+pw.replace(/./g,'•'));
+  await send(passFrame(pw));
+  await sleep(700);
+}
+async function afterConnect(){
+  await authenticate();
+  BLE.fails=0;await pollStatus();
+  if(!S.status.total){await sleep(800);BLE.fails=0;BLE.lastPoll=0;await pollStatus()}
+  if(S.status.total){ if(!S.lib||S.lib.total!==S.status.total) openScan(); }
+  else askPassword();
+  render();
+}
+function askPassword(){
+  const d=sheet(`<h3>Senha do DS Player</h3><p>O aparelho não respondeu. A senha de fábrica é <b>1234</b>. Se você trocou no app da Stetsom, digite a sua.</p>
+    <input class="field" id="pw" inputmode="numeric" maxlength="4" placeholder="4 números" value="${esc(LS.get('dsp_pass','1234'))}">
+    <button class="bigbtn" id="pwok">${ic('check')} Entrar</button>`);
+  const f=d.querySelector('#pw');setTimeout(()=>f.focus(),100);
+  d.querySelector('#pwok').onclick=async()=>{const v=f.value.replace(/\D/g,'');if(v.length!==4)return toast('A senha tem 4 números');LS.set('dsp_pass',v);closeSheet();toast('Tentando…');await afterConnect()};
+}
 window.__ble={
   onLog:m=>dlog(m),
   onError:m=>{dlog('ERRO: '+m);toast(m)},
   onData:h=>{const v=new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));handleData(v)},
   onConnected:async name=>{
-    BLE.native=true;BLE.readMode=false;BLE.fails=0;BLE.dev={name};S.mode='ble';setConn();toast('Conectado em '+(name||'DS Player'));
-    await pollStatus();
-    if(S.status.total&&(!S.lib||S.lib.total!==S.status.total)) openScan();
-    else if(!S.status.total) toast('Conectado, mas o aparelho não respondeu. Veja o diagnóstico em Ajustes.');
-    render();
+    BLE.native=true;BLE.readMode=false;BLE.fails=0;BLE.pz=0;BLE.dev={name};S.mode='ble';setConn();toast('Conectado em '+(name||'DS Player'));
+    await afterConnect();
   },
   onDisconnected:()=>{dlog('DESCONECTOU');S.scanning=null;if(S.mode==='ble'){S.mode='off';setConn();render()}},
   onBack:()=>{ // botão voltar do Android: sobe uma pasta em vez de fechar o app
@@ -372,10 +397,7 @@ async function connectBLE(){
     BLE.dev=dev;
     await setupGatt(dev);
     S.mode='ble';setConn();toast('Conectado em '+(dev.name||'DS Player'));
-    await pollStatus();
-    if(S.status.total&&(!S.lib||S.lib.total!==S.status.total)) openScan();
-    else if(!S.status.total) toast('Conectado, mas o aparelho não respondeu. Veja o diagnóstico em Ajustes.');
-    render();
+    await afterConnect();
   }catch(e){
     const m=(e&&e.message)||String(e);
     if(m.indexOf('cancel')>=0)return;
@@ -394,7 +416,7 @@ async function onDisconnect(){
   for(let t=1;t<=3;t++){
     toast('Caiu a conexão, reconectando ('+t+'/3)…');
     await sleep(1500);
-    try{await setupGatt(BLE.dev);dlog('reconectado');S.mode='ble';setConn();toast('Reconectado');return}
+    try{await setupGatt(BLE.dev);dlog('reconectado');S.mode='ble';setConn();toast('Reconectado');await authenticate();return}
     catch(e){dlog('reconexão '+t+' falhou: '+(e.message||e))}
   }
   S.mode='off';BLE.chr=null;setConn();render();toast('Desconectado');
@@ -678,6 +700,10 @@ function Settings(){
     ${S.mode==='ble'?`<button class="btn2" style="width:100%;margin-bottom:10px" data-do="test">Testar resposta do aparelho</button>`:''}
     <div class="row2"><button class="btn2" data-do="diag">Ver diagnóstico</button><button class="btn2" data-do="copydiag">Copiar</button></div>
   </div>
+  <div class="card"><div class="label">Senha do aparelho</div>
+    <div class="switch"><span>Senha salva</span><b>${'•'.repeat(LS.get('dsp_pass','1234').length)}</b></div>
+    <button class="btn2" style="width:100%" data-do="pass">Trocar senha salva</button>
+  </div>
   <div class="card"><div class="label">Pendrive</div>
     <div class="switch"><span>Músicas carregadas</span><b>${S.lib?S.lib.tracks.length:0}</b></div>
     <div class="switch"><span>Pastas</span><b>${S.lib?new Set(S.lib.tracks.map(t=>t.folder)).size:0}</b></div>
@@ -685,7 +711,7 @@ function Settings(){
     <button class="btn2" style="width:100%" data-do="scan">${ic('refresh')} Ler músicas de novo</button>
   </div>
   <div class="card"><div class="label">Sobre</div>
-    <p class="note">DS Player Control v2.0 • by @guucds<br>Para aparelhos Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).<br>${NATIVE?'App Android com Bluetooth nativo.':'Use no Chrome do Android com Bluetooth e localização ligados.'}</p>
+    <p class="note">DS Player Control v2.1 • by @guucds<br>Para aparelhos Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).<br>${NATIVE?'App Android com Bluetooth nativo.':'Use no Chrome do Android com Bluetooth e localização ligados.'}</p>
   </div>`;
 }
 
@@ -723,6 +749,7 @@ function doAction(a){
   if(a==='plrename'){const pl=S.playlists.find(p=>p.id===S.openPl);promptName('Renomear playlist',pl.name,n=>{pl.name=n;savePl();render()})}
   if(a==='pldel'){const pl=S.playlists.find(p=>p.id===S.openPl);confirmSheet('Apagar "'+pl.name+'"?','A playlist será removida do celular.',()=>{S.playlists=S.playlists.filter(p=>p!==pl);if(S.queue?.plId===pl.id)S.queue=null;savePl();S.openPl=null;render()})}
   if(a==='stopq')stopQueue();
+  if(a==='pass')askPassword();
   if(a==='test'){BLE.fails=0;toast('Testando… aguarde');ask('A',null,2500,1).then(v=>{toast('Respondeu!');dlog('TESTE OK: '+hex(v))},e=>{toast('Sem resposta');dlog('TESTE sem resposta')}).finally(()=>doAction('diag'))}
   if(a==='diag')sheet(`<h3>Diagnóstico</h3><p>Mande um print disso se não conectar</p><pre style="white-space:pre-wrap;font-size:11px;background:#0b0b0f;padding:12px;border-radius:12px;color:#ccc;max-height:55vh;overflow:auto">${esc(BLE.log.join('\n')||'Nada ainda. Tente conectar primeiro.')}</pre>`);
   if(a==='copydiag'){navigator.clipboard?.writeText(BLE.log.join('\n')).then(()=>toast('Diagnóstico copiado'),()=>toast('Não deu pra copiar'))}
