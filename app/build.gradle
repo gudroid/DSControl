@@ -1,0 +1,25 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'br.com.guucds.dscontrol'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'br.com.guucds.dscontrol'
+        minSdk 23
+        targetSdk 34
+        versionCode 2
+        versionName '2.0'
+    }
+    signingConfigs {
+        fixa {
+            storeFile file('dscontrol.jks')
+            storePassword 'guucds123'
+            keyAlias 'dscontrol'
+            keyPassword 'guucds123'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.fixa }
+        debug { signingConfig signingConfigs.fixa }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
