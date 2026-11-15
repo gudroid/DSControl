@@ -164,12 +164,18 @@ public class MainActivity extends Activity {
         final ScanCallback cb = new ScanCallback() {
             @Override public void onScanResult(int type, ScanResult r) {
                 BluetoothDevice d = r.getDevice();
-                String n = d.getName();
-                if (r.getScanRecord() != null && r.getScanRecord().getDeviceName() != null) n = r.getScanRecord().getDeviceName();
-                if (n == null || !(n.startsWith("DSPlayer") || n.startsWith("DS Player"))) return;
+                android.bluetooth.le.ScanRecord rec = r.getScanRecord();
+                String n = (rec != null && rec.getDeviceName() != null) ? rec.getDeviceName() : d.getName();
+                boolean byName = n != null && (n.startsWith("DSPlayer") || n.startsWith("DS Player"));
+                boolean bySvc = false;
+                if (rec != null && rec.getServiceUuids() != null) {
+                    for (android.os.ParcelUuid pu : rec.getServiceUuids()) if (pu.getUuid().equals(SVC)) { bySvc = true; break; }
+                }
+                if (!byName && !bySvc) return;
                 for (BluetoothDevice x : found) if (x.getAddress().equals(d.getAddress())) return;
                 found.add(d);
-                final String label = n;
+                String addr = d.getAddress();
+                final String label = (n != null ? n : "DS Player") + (byName ? "" : " [" + (addr.length() >= 5 ? addr.substring(addr.length() - 5) : addr) + "]");
                 ui.post(() -> names.add(label));
             }
         };
