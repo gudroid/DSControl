@@ -44,8 +44,11 @@ header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 16
 .hbtn .dot{width:8px;height:8px;border-radius:50%;background:#555;transition:.3s}
 .hbtn.on{border-color:#28e0a455}.hbtn.on .dot{background:var(--ok);box-shadow:0 0 10px var(--ok)}
 .hbtn.demo .dot{background:var(--warn)}
-.pwr.on{color:var(--ok);border-color:#28e0a455}
-.pwr.off{color:var(--acc);border-color:#ff2e4655}
+.hbtn.pwr{width:48px;min-width:48px;padding:0;justify-content:center;border-width:0}
+.hbtn.pwr svg{width:24px;height:24px}
+.pwr.on{color:#fff;background:linear-gradient(160deg,#2ee6a6,#11b07f);box-shadow:0 7px 18px -6px #28e0a4cc}
+.pwr.off{color:#fff;background:linear-gradient(160deg,#ff5d6b,#e2374a);box-shadow:0 7px 18px -6px #ff2e46cc}
+.pwr:active{transform:scale(.9)}
 
 #side{display:none}
 #main{overflow-y:auto;overflow-x:hidden;padding:12px 16px calc(var(--nav-h) + 96px);min-width:0;scroll-behavior:auto}
@@ -324,9 +327,18 @@ pre.diag{white-space:pre-wrap;font-size:11px;background:#050507;padding:13px;bor
 #gate .codebox .code{font-size:30px;font-weight:850;letter-spacing:3px;margin:6px 0 2px;font-variant-numeric:tabular-nums}
 #gate .codebox button{margin-top:8px;font-size:12.5px;color:var(--acc);font-weight:700}
 #gate.locked .glogo{background:linear-gradient(135deg,#ff2e46,#b00)}
-#gate .plans{display:flex;gap:9px;margin:4px 0 16px}
-#gate .plans .pl{flex:1;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center}
-#gate .plans .pl b{display:block;font-size:17px}#gate .plans .pl small{color:var(--dim);font-size:11px}
+.plans{display:flex;gap:10px;margin:10px 0 4px}
+.pl{flex:1;position:relative;background:var(--surf2);border:1px solid var(--line);border-radius:16px;padding:16px 8px 13px;text-align:center;overflow:hidden;transition:transform .12s var(--ease)}
+.pl:active{transform:scale(.94)}
+.pl b{display:block;font-size:17px;font-weight:850;letter-spacing:-.3px}
+.pl small{display:block;color:var(--dim);font-size:11px;font-weight:700;margin-top:3px}
+.pl.best{border-color:#ff2e4677;background:linear-gradient(165deg,#ff2e4626,#ff6a3d12);box-shadow:0 10px 24px -14px #ff2e46}
+.pl.best b{color:#ff8f99}
+.pl.best::before{content:"POPULAR";position:absolute;top:0;left:0;right:0;font-size:8px;font-weight:800;letter-spacing:1px;color:#fff;background:var(--grad);padding:3px 0}
+.pl.best{padding-top:24px}
+.pl.gold{border-color:#ffc04366;background:linear-gradient(165deg,#ffc04320,#ff6a3d10)}
+.pl.gold b{color:#ffd98a}
+#gate .plans{margin:4px 0 16px}
 #gate .contact{text-align:center;margin-top:16px;font-size:13px;color:var(--sub)}
 #gate .contact a{color:var(--acc);font-weight:700;text-decoration:none}
 .licbanner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;margin-bottom:14px;font-size:13px;font-weight:650}
@@ -578,7 +590,7 @@ const tkey=t=>t.folder+'|'+t.name;
 
 /* ===== PROTOCOLO / CONEXÃO / BIBLIOTECA / CAPAS ===== */
 const NATIVE=!!window.AndroidBLE;
-const APP_VERSION='4.4';
+const APP_VERSION='4.5';
 function cmpVer(a,b){a=String(a||'0').split('.').map(Number);b=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y}return 0}
 const req=(letter,idx)=>{const b=new Uint8Array(8).fill(0x30);b[0]=0x52;b[6]=letter.charCodeAt(0);if(idx!=null){b[2]=(idx>>8)&255;b[3]=idx&255}return b};
 const upd=letter=>{const b=new Uint8Array(16).fill(0x30);b[0]=0x53;b[6]=letter.charCodeAt(0);return b};
@@ -587,6 +599,8 @@ const CMD={play:'C0000400',pause:'C0000410',next:'C0000050',prev:'C0000060',fnex
 const RESP={'1':0,'2':1,'A':65,'X':88,'Y':89,'Q':81,'T':84,'j':106,'k':107,'l':108};
 const SOURCES=[['1','USB','usb'],['4','Bluetooth','bt'],['7','RCA','rca']];
 const PLANS=[['1 mês','R$ 13,99'],['6 meses','R$ 59,99'],['Vitalício','R$ 149,99']];
+const PLCLS=['','best','gold'];
+function planBtns(){return PLANS.map((p,i)=>`<button class="pl ${PLCLS[i]||''}" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}
 const MODES=[[1,'Sequência','seq'],[2,'Repetir','rep'],[3,'Pasta','folder'],[4,'Aleatório','shuf']];
 const EQCH=[['A','CH1 • CH2'],['C','CH3 • CH4'],['E','OUT1 • OUT2']];
 const CHS=[['A','CH1'],['B','CH2'],['C','CH3'],['D','CH4'],['E','OUT1'],['F','OUT2']];
@@ -647,7 +661,7 @@ window.__ble={
   onLog:m=>dlog(m),
   onError:m=>{dlog('ERRO: '+m);toast(m)},
   onData:h=>{if(!h)return;handleData(new Uint8Array(h.match(/../g).map(x=>parseInt(x,16))))},
-  onConnected:async name=>{BLE.dev={name};BLE.fails=0;BLE.pz=0;S.mode='ble';setConn();toast('Conectado: '+(name||'DS Player'));await afterConnect()},
+  onConnected:async name=>{BLE.dev={name};BLE.fails=0;BLE.pz=0;S.mode='ble';if(S._passSheet&&$('#sheetbg')){closeSheet()}S._passSheet=false;setConn();renderAll();toast('Conectado: '+(name||'DS Player'));await afterConnect()},
   onDisconnected:()=>{dlog('DESCONECTOU');if(S.scan)S.scan.paused=true;if(S.mode==='ble'){S.mode='off';setConn();renderAll()}},
   onBack:()=>{
     if($('#sheetbg')){closeSheet();return true}
@@ -671,7 +685,9 @@ async function afterConnect(){
   await send(passFrame(pw),'senha');
   await sleep(600);
   BLE.fails=0;BLE.gotStatus=false;await pollStatus(true);
-  if(!BLE.gotStatus){await sleep(900);await pollStatus(true)}
+  if(!BLE.gotStatus){await sleep(800);await pollStatus(true)}
+  if(!BLE.gotStatus){await sleep(1000);await pollStatus(true)}
+  renderAll();
   if(!BLE.gotStatus){askPassword();return}
   if(!S.status.total)toast('Conectado. Nenhuma música no USB (pendrive inserido?)');
   readGeneral();
@@ -687,11 +703,23 @@ async function readGeneral(){
   }catch(e){}
 }
 function askPassword(){
-  const d=sheet(`<h3>Senha do DS Player</h3><p>O aparelho não respondeu. A senha de fábrica é <b>1234</b>. Se você trocou no app da Stetsom, digite a sua.</p>
+  S._passSheet=true;
+  const d=sheet(`<h3>Senha do DS Player</h3>
+    <p><b>Seu aparelho já está conectado.</b> Se o seu DS Player <b>não tem senha</b>, é só fechar este aviso — o app continua funcionando normalmente.</p>
+    <p class="note" style="margin:8px 0 12px">Só digite a senha abaixo se você cadastrou uma no app da Stetsom. A de fábrica é <b>1234</b>.</p>
     <input class="field" id="pw" inputmode="numeric" maxlength="4" placeholder="4 números" value="${esc(LS.get('dsp_pass','1234'))}">
-    <button class="bigbtn" id="pwok">${ic('check')} Entrar</button>`);
+    <button class="bigbtn" id="pwok">${ic('check')} Testar senha</button>
+    <button class="btn2" id="pwskip" style="width:100%;margin-top:10px">Meu aparelho não tem senha</button>`);
   const f=d.querySelector('#pw');
-  d.querySelector('#pwok').onclick=async()=>{const v=f.value.replace(/\D/g,'');if(v.length!==4)return toast('A senha tem 4 números');LS.set('dsp_pass',v);closeSheet();toast('Tentando…');await afterConnect()};
+  const done=()=>{S._passSheet=false;closeSheet()};
+  d.querySelector('#pwskip').onclick=()=>{done();for(let i=1;i<=3;i++)setTimeout(()=>pollStatus(true,true),i*900);renderAll()};
+  d.querySelector('#pwok').onclick=async()=>{
+    const v=f.value.replace(/\D/g,'');if(v.length!==4)return toast('A senha tem 4 números');
+    LS.set('dsp_pass',v);const b=d.querySelector('#pwok');b.textContent='Testando…';
+    await send(passFrame(v),'senha');await sleep(700);BLE.gotStatus=false;await pollStatus(true);
+    if(BLE.gotStatus){done();toast('Senha certa! Conectado.');readGeneral();startScanIfNeeded();renderAll()}
+    else{b.innerHTML=ic('check')+' Testar senha';toast('Ainda sem resposta. Se o aparelho não tem senha, feche este aviso.')}
+  };
 }
 
 /* ---------- status ---------- */
@@ -1314,7 +1342,7 @@ function Settings(){
     <div class="sw"><span>Código do aparelho</span><b style="letter-spacing:1px">${LIC.codeFmt()}</b></div>
     ${st==='active'?`<div class="sw"><span>Tempo restante</span><b>${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}</b></div>`:''}
     <div style="margin-top:12px"><button class="bigbtn" data-do="activate">${ic('key')} ${st==='active'?'Renovar / adicionar chave':'Ativar com chave'}</button></div>
-    <div class="plans" style="display:flex;gap:9px;margin-top:12px">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}" style="flex:1;background:var(--surf2);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center"><b style="display:block">${p[1]}</b><small style="color:var(--dim);font-size:11px">${p[0]}</small></button>`).join('')}</div>
+    <div class="plans">${planBtns()}</div>
     <p class="note" style="margin-top:10px">Toque no plano para pedir no WhatsApp. PIX <b>(99) 98400-3657</b>.</p>
   </div>
   <div class="card"><div class="label">Aparelho</div>
@@ -1351,7 +1379,7 @@ function Settings(){
       <a class="soc wa" href="https://wa.me/${WHATS}" target="_blank"><span class="orb">${ic('wa')}</span><small>WhatsApp</small></a>
     </div>
   </div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.4 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.5 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
@@ -1380,7 +1408,7 @@ function activateSheet(unlock){
     <input class="field" id="lickey" placeholder="Cole a chave aqui (DSC1...)" autocapitalize="off" autocomplete="off">
     <button class="bigbtn" id="licok">${ic('check')} Ativar</button>
     <div class="label" style="margin-top:16px">Planos — toque para pedir</div>
-    <div class="plans">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}</div>
+    <div class="plans">${planBtns()}</div>
     <div class="note" style="text-align:center;margin-top:8px">PIX <b>(99) 98400-3657</b></div>`);
   d.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>askPlan(+b.dataset.plan));
   d.querySelector('#cpcode').onclick=()=>{navigator.clipboard?.writeText(LIC.codeFmt());toast('Código copiado')};
@@ -1422,7 +1450,7 @@ function gateCheck(silent){
   }else{
     g.innerHTML=`<div class="gin"><div class="glogo">${ic('music')}</div><h2>${st==='expired'?'Seu aluguel venceu':'Ative o DS Control'}</h2>
       <div class="gsub">${st==='expired'?'Renove para continuar usando.':'Alugue o app para controlar seu DS Player.'}</div>
-      <div class="plans">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}</div>
+      <div class="plans">${planBtns()}</div>
       <div class="note" style="text-align:center;margin-bottom:12px">Toque no plano para pedir no WhatsApp. Pague no PIX <b>(99) 98400-3657</b> e receba a chave.</div>
       ${code}<input class="field" id="gk" placeholder="Cole a chave (DSC1...)" autocapitalize="off"><button class="bigbtn" id="gok">${ic('check')} Ativar</button>
       ${contact}</div>`;
