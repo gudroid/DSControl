@@ -6,8 +6,8 @@ android {
         applicationId 'br.com.guucds.dscontrol'
         minSdk 23
         targetSdk 34
-        versionCode 4
-        versionName '3.0'
+        versionCode 5
+        versionName '4.0'
     }
     signingConfigs {
         fixa {
@@ -18,7 +18,7 @@ android {
         }
     }
     buildTypes {
-        release { minifyEnabled false; signingConfig signingConfigs.fixa }
+        release { minifyEnabled true; shrinkResources true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'; signingConfig signingConfigs.fixa }
         debug { signingConfig signingConfigs.fixa }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }

@@ -1,0 +1,3 @@
+-keepattributes JavascriptInterface
+-keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
+-keep class br.com.guucds.dscontrol.** { *; }

@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.ValueCallback;
@@ -20,6 +21,13 @@ import android.content.Intent;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.util.Base64;
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import android.widget.ArrayAdapter;
 
 import java.util.ArrayList;
@@ -48,6 +56,9 @@ public class MainActivity extends Activity {
     boolean userClosed = false;
     BluetoothDevice lastDevice;
     ValueCallback<Uri[]> fileCb;
+    static final String LIC_PUB = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMB5OzilAyrJhPDuE4jAFJFglV2mTC5JZwZEkbBh7Y45ZUJQ4hL5ne4uF/pxgXsw4cRpsKopP5QtHQaZ1fI8pFA==";
+    static byte[] hexToBytes(String h){byte[] o=new byte[h.length()/2];for(int i=0;i<o.length;i++)o[i]=(byte)Integer.parseInt(h.substring(i*2,i*2+2),16);return o;}
+    static byte[] toDer(byte[] raw){BigInteger r=new BigInteger(1,Arrays.copyOfRange(raw,0,32)),s=new BigInteger(1,Arrays.copyOfRange(raw,32,64));byte[] rb=r.toByteArray(),sb=s.toByteArray();byte[] o=new byte[6+rb.length+sb.length];o[0]=0x30;o[1]=(byte)(4+rb.length+sb.length);o[2]=2;o[3]=(byte)rb.length;System.arraycopy(rb,0,o,4,rb.length);o[4+rb.length]=2;o[5+rb.length]=(byte)sb.length;System.arraycopy(sb,0,o,6+rb.length,sb.length);return o;}
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -106,6 +117,20 @@ public class MainActivity extends Activity {
 
     class Bridge {
         @JavascriptInterface public boolean available() { return true; }
+        // confere a assinatura da chave de licença (apenas verificação, com a chave pública embutida)
+        @JavascriptInterface public boolean licenseVerify(String payloadHex, String sigHex) {
+            try {
+                byte[] pay = hexToBytes(payloadHex), raw = hexToBytes(sigHex);
+                byte[] der = toDer(raw);
+                PublicKey pk = KeyFactory.getInstance("EC").generatePublic(new X509EncodedKeySpec(Base64.decode(LIC_PUB, Base64.DEFAULT)));
+                Signature v = Signature.getInstance("SHA256withECDSA");
+                v.initVerify(pk); v.update(pay); return v.verify(der);
+            } catch (Exception e) { return false; }
+        }
+        @JavascriptInterface public String deviceId() {
+            try { String a = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+                  return a != null ? a : Build.FINGERPRINT; } catch (Exception e) { return ""; }
+        }
         @JavascriptInterface public void connect() { ui.post(MainActivity.this::startScan); }
         @JavascriptInterface public void disconnect() {
             ui.post(() -> { userClosed = true; if (gatt != null) { gatt.disconnect(); gatt.close(); gatt = null; } js("onDisconnected", ""); });
