@@ -14,6 +14,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
+import android.net.Uri;
+import android.content.Intent;
+import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.ArrayAdapter;
@@ -43,6 +47,7 @@ public class MainActivity extends Activity {
     boolean writing = false;
     boolean userClosed = false;
     BluetoothDevice lastDevice;
+    ValueCallback<Uri[]> fileCb;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -55,7 +60,21 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(true);
-        web.setWebChromeClient(new WebChromeClient());
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON); // tela não apaga no carro
+        s.setMediaPlaybackRequiresUserGesture(false);
+        web.setWebChromeClient(new WebChromeClient() {
+            // permite escolher a capa na galeria
+            @Override public boolean onShowFileChooser(WebView v, ValueCallback<Uri[]> cb, FileChooserParams p) {
+                if (fileCb != null) fileCb.onReceiveValue(null);
+                fileCb = cb;
+                Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("image/*");
+                try { startActivityForResult(Intent.createChooser(i, "Escolher capa"), 77); }
+                catch (Exception e) { fileCb = null; return false; }
+                return true;
+            }
+        });
         web.setBackgroundColor(0xFF0B0B0F);
         web.addJavascriptInterface(new Bridge(), "AndroidBLE");
         web.loadUrl("file:///android_asset/index.html");
@@ -211,6 +230,16 @@ public class MainActivity extends Activity {
         });
     }
     void superBack() { super.onBackPressed(); }
+    @Override protected void onActivityResult(int req, int res, Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 77 && fileCb != null) {
+            Uri u = (res == RESULT_OK && data != null) ? data.getData() : null;
+            fileCb.onReceiveValue(u != null ? new Uri[]{u} : null);
+            fileCb = null;
+        }
+    }
+    // girar a tela não recria nada: a conexão continua
+    @Override public void onConfigurationChanged(android.content.res.Configuration c) { super.onConfigurationChanged(c); }
     @Override protected void onDestroy() {
         userClosed = true;
         if (gatt != null) { gatt.disconnect(); gatt.close(); }
