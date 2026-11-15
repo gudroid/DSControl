@@ -590,7 +590,7 @@ const tkey=t=>t.folder+'|'+t.name;
 
 /* ===== PROTOCOLO / CONEXÃO / BIBLIOTECA / CAPAS ===== */
 const NATIVE=!!window.AndroidBLE;
-const APP_VERSION='4.6';
+const APP_VERSION='4.8';
 function cmpVer(a,b){a=String(a||'0').split('.').map(Number);b=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y}return 0}
 const req=(letter,idx)=>{const b=new Uint8Array(8).fill(0x30);b[0]=0x52;b[6]=letter.charCodeAt(0);if(idx!=null){b[2]=(idx>>8)&255;b[3]=idx&255}return b};
 const upd=letter=>{const b=new Uint8Array(16).fill(0x30);b[0]=0x53;b[6]=letter.charCodeAt(0);return b};
@@ -680,13 +680,16 @@ function connect(){
 }
 function passFrame(pw){const n=parseInt(pw,10)||0;return new Uint8Array([0x53,0x30,0x30,(n>>8)&255,n&255,0x30,0x65,0x30])}
 async function afterConnect(){
-  const pw=LS.get('dsp_pass','1234');
-  await sleep(500);
-  await send(passFrame(pw),'senha');
-  await sleep(600);
-  BLE.fails=0;BLE.gotStatus=false;await pollStatus(true);
-  if(!BLE.gotStatus){await sleep(800);await pollStatus(true)}
-  if(!BLE.gotStatus){await sleep(1000);await pollStatus(true)}
+  await sleep(400);
+  BLE.gotStatus=false;
+  // Fase 1: tenta ler SEM senha (aparelho sem senha responde direto)
+  for(let k=0;k<4 && !BLE.gotStatus && S.mode==='ble';k++){BLE.fails=0;await pollStatus(true);if(!BLE.gotStatus)await sleep(600)}
+  // Fase 2: se não respondeu, manda a senha salva e tenta de novo
+  if(!BLE.gotStatus && S.mode==='ble'){
+    const pw=LS.get('dsp_pass','1234');
+    await send(passFrame(pw),'senha');await sleep(700);
+    for(let k=0;k<3 && !BLE.gotStatus && S.mode==='ble';k++){BLE.fails=0;await pollStatus(true);if(!BLE.gotStatus)await sleep(700)}
+  }
   renderAll();
   if(!BLE.gotStatus){askPassword();return}
   if(!S.status.total)toast('Conectado. Nenhuma música no USB (pendrive inserido?)');
@@ -735,10 +738,12 @@ async function pollStatus(force,quiet){
     S.status={index:u16(2),total:u16(4),dir:u16(6),dirs:u16(8),pmode:v[10]};
     if(prev!==S.status.index&&prev!==-1&&!quiet)onTrackChanged(prev,S.status.index);
     if(prev!==S.status.index){S.playing=true;renderLive()}
-  }catch(e){BLE.fails++;if(BLE.fails===6)dlog('status: sem resposta, pausando consultas')}
+    if(S.status.total){try{startScanIfNeeded()}catch(e){}}
+  }catch(e){BLE.fails++;if(BLE.fails===6)dlog('status: sem resposta, tentando de novo em segundos')}
   finally{BLE.polling=false}
 }
 setInterval(()=>pollStatus(),2500);
+setInterval(()=>{if(S.mode==='ble'&&(!BLE.gotStatus||BLE.fails>=6))pollStatus(true)},7000);
 const fmt=s=>s==null||isNaN(s)?'--:--':Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 async function pollTime(){
   if(S.mode!=='ble'||!S.playing||BLE.timeBusy)return;
@@ -1379,7 +1384,7 @@ function Settings(){
       <a class="soc wa" href="https://wa.me/${WHATS}" target="_blank"><span class="orb">${ic('wa')}</span><small>WhatsApp</small></a>
     </div>
   </div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.6 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.8 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
