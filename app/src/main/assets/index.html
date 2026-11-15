@@ -332,6 +332,16 @@ pre.diag{white-space:pre-wrap;font-size:11px;background:#050507;padding:13px;bor
 .licbanner{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;margin-bottom:14px;font-size:13px;font-weight:650}
 .licbanner.warn{background:#ffc04318;border:1px solid #ffc04340;color:#ffd98a}
 .licbanner svg{width:18px;height:18px;flex:none}
+.social .socrow{display:flex;gap:14px;justify-content:space-between}
+.soc{display:flex;flex-direction:column;align-items:center;gap:9px;text-decoration:none;flex:1;transition:transform .14s var(--ease)}
+.soc:active{transform:scale(.92)}
+.soc .orb{width:66px;height:66px;border-radius:21px;display:grid;place-items:center;color:#fff;position:relative;overflow:hidden;box-shadow:0 10px 22px -6px #000a,0 2px 0 #ffffff30 inset,0 -8px 14px -6px #0006 inset}
+.soc .orb::before{content:"";position:absolute;inset:0;border-radius:21px;background:linear-gradient(160deg,#ffffff55,transparent 45%);pointer-events:none}
+.soc .orb svg{width:32px;height:32px;filter:drop-shadow(0 2px 3px #0007);position:relative;z-index:1}
+.soc.ig .orb{background:radial-gradient(120% 120% at 25% 15%,#feda75,#fa7e1e 28%,#d62976 55%,#962fbf 78%,#4f5bd5)}
+.soc.wa .orb{width:72px;height:72px;border-radius:23px;background:linear-gradient(160deg,#4ce06a,#1faa4e);box-shadow:0 12px 26px -6px #1faa4eaa,0 2px 0 #ffffff40 inset,0 -9px 16px -6px #0006 inset}
+.soc.wa .orb svg{width:38px;height:38px}
+.soc small{font-size:12px;font-weight:700;color:var(--sub)}
 
 .screen{animation:scin .22s var(--ease)}
 @keyframes scin{from{opacity:0;transform:translateY(6px)}}
@@ -515,7 +525,9 @@ const CONFIG_URL='https://raw.githubusercontent.com/gudroid/dscontrol-config/mai
 const RC={
   born(){let b=LS.get('dsc_born',0);if(!b){b=Date.now();LS.set('dsc_born',b)}return b},
   ageDays(){return Math.floor((Date.now()-this.born())/DAY)},
-  read(){return LS.get('dsc_cfg2',{mode:'free',blockDays:0,notice:'',noticeId:0,ping:'',issue:-1})},
+  freeDays(){const b=this.read().blockDays;return (b===undefined||b===null)?30:b},
+  trialLeft(){return Math.max(0,this.freeDays()-this.ageDays())},
+  read(){return LS.get('dsc_cfg2',{mode:'free',blockDays:30,notice:'',noticeId:0,link:'',linkText:'',minVer:'',apkUrl:'',ping:'',issue:-1})},
   mode(){return this.read().mode||'free'},
   async fetch(){
     try{
@@ -525,15 +537,16 @@ const RC={
       const sig=Uint8Array.from(atob(m[2].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
       if(sig.length!==64||!await LIC.verify(jb,sig))return;
       const j=JSON.parse(new TextDecoder().decode(jb));const cur=this.read();
-      if((j.issue||0)>=(cur.issue||-1))LS.set('dsc_cfg2',Object.assign({mode:'free',blockDays:0,notice:'',noticeId:0,ping:'',issue:0},j));
+      if((j.issue||0)>=(cur.issue||-1))LS.set('dsc_cfg2',Object.assign({mode:'free',blockDays:30,notice:'',noticeId:0,link:'',linkText:'',minVer:'',apkUrl:'',ping:'',issue:0},j));
     }catch(e){}
   },
-  ping(){const cfg=this.read();if(!cfg.ping)return;try{fetch(cfg.ping+(cfg.ping.includes('?')?'&':'?')+'code='+encodeURIComponent(LIC.code)+'&v=4.3&age='+this.ageDays(),{cache:'no-store',mode:'no-cors'})}catch(e){}}
+  ping(){const cfg=this.read();if(!cfg.ping)return;try{fetch(cfg.ping+(cfg.ping.includes('?')?'&':'?')+'code='+encodeURIComponent(LIC.code)+'&v='+APP_VERSION+'&age='+this.ageDays(),{cache:'no-store',mode:'no-cors'})}catch(e){}}
 };
 function checkNotice(){
   const cfg=RC.read();if(!cfg.notice||!cfg.noticeId)return;
   if((LS.get('dsc_noticeSeen',0)||0)>=cfg.noticeId)return;
-  const d=sheet(`<h3>Aviso do @guucds</h3><p style="white-space:pre-wrap">${esc(cfg.notice)}</p><button class="bigbtn" id="noticeok">${ic('check')} Entendi</button>`);
+  const linkBtn=cfg.link?`<a class="bigbtn" href="${esc(cfg.link)}" target="_blank" style="text-decoration:none;margin-bottom:10px">${ic('insta')} ${esc(cfg.linkText||'Abrir')}</a>`:'';
+  const d=sheet(`<h3>Aviso do @guucds</h3><p style="white-space:pre-wrap">${esc(cfg.notice)}</p>${linkBtn}<button class="bigbtn" id="noticeok" style="${cfg.link?'background:var(--surf2);border:1px solid var(--line);box-shadow:none':''}">${ic('check')} Entendi</button>`);
   d.querySelector('#noticeok').onclick=()=>{LS.set('dsc_noticeSeen',cfg.noticeId);closeSheet()};
 }
 
@@ -565,6 +578,8 @@ const tkey=t=>t.folder+'|'+t.name;
 
 /* ===== PROTOCOLO / CONEXÃO / BIBLIOTECA / CAPAS ===== */
 const NATIVE=!!window.AndroidBLE;
+const APP_VERSION='4.4';
+function cmpVer(a,b){a=String(a||'0').split('.').map(Number);b=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y}return 0}
 const req=(letter,idx)=>{const b=new Uint8Array(8).fill(0x30);b[0]=0x52;b[6]=letter.charCodeAt(0);if(idx!=null){b[2]=(idx>>8)&255;b[3]=idx&255}return b};
 const upd=letter=>{const b=new Uint8Array(16).fill(0x30);b[0]=0x53;b[6]=letter.charCodeAt(0);return b};
 const ASCII=s=>new TextEncoder().encode(s);
@@ -1042,29 +1057,6 @@ function setupEqSliders(root){
   });
 }
 
-function Settings(){
-  const sleepLeft=S.sleepAt?Math.max(0,Math.round((S.sleepAt-Date.now())/60000)):0;
-  return `<h1 class="title">Ajustes</h1>
-  <div class="card"><div class="label">Aparelho</div>
-    <div class="sw"><span>Conexão</span><b>${{off:'Desconectado',ble:'Conectado',demo:'Demonstração'}[S.mode]}</b></div>
-    ${S.mode==='ble'?`<div class="sw"><span>Nome</span><b>${esc(BLE.dev?.name||'')}</b></div>`:''}
-    <div class="sw"><span>Liga / desliga</span><div class="row2" style="flex:none;gap:8px"><button class="btn2" data-pw="1">${ic('power')} Ligar</button><button class="btn2 danger" data-pw="0">Desligar</button></div></div>
-    <div class="sw"><span>Desligar automático ${S.sleepAt?`<small class="note">(em ${sleepLeft} min)</small>`:''}</span><div class="chips">${[0,15,30,60].map(m=>`<button class="chip ${(!S.sleepAt&&!m)||(S.sleepAt&&S._sleepM===m)?'on':''}" data-sleep="${m}" style="padding:8px 11px">${m?m+' min':'Off'}</button>`).join('')}</div></div>
-    <div style="margin-top:12px">${S.mode==='off'?`<button class="bigbtn" data-do="connect">${ic('bt')} Conectar</button>`:`<button class="btn2" style="width:100%" data-do="disconnect">${ic('x')} Desconectar</button>`}</div>
-  </div>
-  <div class="card"><div class="label">Pendrive</div>
-    <div class="sw"><span>Músicas</span><b>${S.lib?S.lib.tracks.length:0}${S.lib&&!S.lib.done?' (lendo…)':''}</b></div>
-    <div class="sw"><span>Pastas</span><b>${allFolderNames().length}</b></div>
-    <p class="note" style="margin:10px 0">A lista fica salva no celular. Leia de novo quando trocar as músicas do pendrive.</p>
-    <div class="row2"><button class="btn2" data-do="rescan">${ic('refresh')} Ler de novo</button><button class="btn2" data-do="resetorg">Desfazer organização</button></div>
-  </div>
-  <div class="card"><div class="label">Senha do aparelho</div>
-    <div class="sw"><span>Senha salva</span><b>${'•'.repeat(String(LS.get('dsp_pass','1234')).length)}</b></div>
-    <button class="btn2" style="width:100%;margin-top:10px" data-do="pass">Trocar senha salva</button></div>
-  <div class="card"><div class="label">Diagnóstico</div>
-    <div class="row2"><button class="btn2" data-do="diag">Ver diagnóstico</button><button class="btn2" data-do="copydiag">Copiar</button></div></div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v3.1 • by @guucds<br>Para Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
-}
 
 
 /* ================= RENDER / TELAS (v4.0) ================= */
@@ -1199,7 +1191,8 @@ function PlayerInner(panel){
       ${tr?`<button class="btn2 ${fav?'danger':''}" data-fav="${esc(tkey(tr))}">${ic(fav?'heartf':'heart')} ${fav?'Favorita':'Favoritar'}</button>`:''}
       <button class="btn2" data-pm2="1">${ic(MODES.find(m=>m[0]===S.pmode)?.[2]||'seq')} ${MODES.find(m=>m[0]===S.pmode)?.[1]||'Modo'}</button>
       ${tr?`<button class="btn2" data-trkmenu="${tr.i}">${ic('more')}</button>`:''}
-    </div>`;
+    </div>
+    ${!panel&&S.upnext.length?`<div style="margin-top:24px"><div class="label">Próximas na fila (${S.upnext.length})</div>${S.upnext.slice(0,10).map((i,k)=>{const t=trackByIndex(i)||{i,name:'Faixa '+i,folder:''};return `<div class="trk"><button data-play="${i}">${coverHTML(coverOf(t),t.name)}</button><button class="tt" data-play="${i}"><b>${esc(cleanName(t.name))}</b><small>${esc(t.folder||'Raiz')}</small></button><button class="mini-b" data-qrm="${k}">${ic('x')}</button></div>`}).join('')}${S.upnext.length>10?`<div class="note" style="margin-top:6px">+ ${S.upnext.length-10} músicas</div>`:''}</div>`:''}`;
 }
 function renderPlayer(){
   const pe=$('#player');pe.classList.toggle('on',!!S.player);
@@ -1313,10 +1306,11 @@ function Library(){
 }
 
 function Settings(){
-  const free=RC.mode()!=='paid';const st=LIC.state();const stName=free?'Grátis':{active:'Ativo',expired:'Expirado',blocked:'Bloqueado',none:'Sem licença'}[st];
+  const st=LIC.state();const trial=RC.trialLeft();const stName=st==='active'?'Ativo':trial>0?'Teste grátis':RC.mode()!=='paid'?'Grátis':st==='blocked'?'Bloqueado':'Expirado';const okpill=st==='active'||trial>0||RC.mode()!=='paid';
   const sleepLeft=S.sleepAt?Math.max(0,Math.round((S.sleepAt-Date.now())/60000)):0;
   return `<h1 class="title">Ajustes</h1>
-  <div class="card"><div class="label"><span>Licença</span><span class="pill ${free||st==='active'?'ok':st==='blocked'?'acc':'warn'}">${stName}</span></div>${free?`<p class="note" style="margin-bottom:10px">O app está liberado gratuitamente por tempo limitado. Aproveite!</p>`:``}
+  <div class="card"><div class="label"><span>Licença</span><span class="pill ${okpill?'ok':st==='blocked'?'acc':'warn'}">${stName}</span></div>
+    ${trial>0&&st!=='active'?`<p class="note" style="margin-bottom:10px">Teste grátis: faltam <b>${trial} dia(s)</b>.</p>`:''}
     <div class="sw"><span>Código do aparelho</span><b style="letter-spacing:1px">${LIC.codeFmt()}</b></div>
     ${st==='active'?`<div class="sw"><span>Tempo restante</span><b>${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}</b></div>`:''}
     <div style="margin-top:12px"><button class="bigbtn" data-do="activate">${ic('key')} ${st==='active'?'Renovar / adicionar chave':'Ativar com chave'}</button></div>
@@ -1347,21 +1341,25 @@ function Settings(){
     <button class="btn2" style="width:100%;margin-top:10px" data-do="pass">Trocar senha salva</button></div>
   <div class="card"><div class="label">Diagnóstico</div>
     <div class="row2"><button class="btn2" data-do="diag">Ver diagnóstico</button><button class="btn2" data-do="copydiag">Copiar</button></div></div>
-  <div class="card"><div class="label">Redes sociais do @guucds</div>
-    <a class="mi" href="https://instagram.com/guucds" target="_blank">${ic('insta')} @guucds</a>
-    <a class="mi" href="https://instagram.com/fiatdodj" target="_blank">${ic('insta')} @fiatdodj</a>
-    <a class="mi" href="https://instagram.com/s10dodj" target="_blank">${ic('insta')} @s10dodj</a>
-    <a class="mi" href="https://wa.me/${WHATS}" target="_blank">${ic('wa')} WhatsApp (99) 98400-3657</a>
+  <div class="card social"><div class="label" style="justify-content:center">Siga o @guucds</div>
+    <div class="socrow">
+      <a class="soc ig" href="https://instagram.com/guucds" target="_blank"><span class="orb">${ic('insta')}</span><small>@guucds</small></a>
+      <a class="soc ig" href="https://instagram.com/fiatdodj" target="_blank"><span class="orb">${ic('insta')}</span><small>@fiatdodj</small></a>
+      <a class="soc ig" href="https://instagram.com/s10dodj" target="_blank"><span class="orb">${ic('insta')}</span><small>@s10dodj</small></a>
+    </div>
+    <div class="socrow" style="justify-content:center;margin-top:16px">
+      <a class="soc wa" href="https://wa.me/${WHATS}" target="_blank"><span class="orb">${ic('wa')}</span><small>WhatsApp</small></a>
+    </div>
   </div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.1 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.4 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
 function licBanner(){
-  if(!NATIVE)return '';const cfg=RC.read();if(cfg.mode!=='paid')return '';
-  const st=LIC.state();
-  if(st==='active'&&LIC.leftDays()<=3)return `<div class="licbanner warn">${ic('clock')}<span>Seu aluguel vence em ${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Renovar</b></span></div>`;
-  if(st!=='active'){const age=RC.ageDays(),bd=cfg.blockDays||0;if(age<bd)return `<div class="licbanner warn">${ic('clock')}<span>Período grátis: faltam <b>${bd-age} dia(s)</b>. Depois você precisa de uma chave. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Ver planos</b></span></div>`;}
+  if(!NATIVE)return '';const st=LIC.state();
+  if(st==='active'){return LIC.leftDays()<=3?`<div class="licbanner warn">${ic('clock')}<span>Seu aluguel vence em ${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Renovar</b></span></div>`:'';}
+  const left=RC.trialLeft();
+  if(left>0)return `<div class="licbanner warn">${ic('clock')}<span>Teste grátis: faltam <b>${left} dia(s)</b>. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Ver planos</b></span></div>`;
   return '';
 }
 function setConn(){
@@ -1394,13 +1392,23 @@ function activateSheet(unlock){
 }
 function askPlan(i){const p=PLANS[i];const msg='Olá @guucds! Quero o plano *'+p[0]+'* ('+p[1]+') do DS Control.\nMeu código do aparelho: '+LIC.codeFmt()+'\nVou pagar no PIX (99) 98400-3657.';window.open('https://wa.me/'+WHATS+'?text='+encodeURIComponent(msg),'_blank')}
 /* ---- gate (overlay bloqueante) ---- */
+function showUpdateGate(cfg){
+  const g=$('#gate');g.className='on';
+  g.innerHTML=`<div class="gin"><div class="glogo">${ic('dn')}</div><h2>Atualização disponível</h2>
+    <div class="gsub">Saiu uma versão nova do DS Control. Baixe para continuar usando.</div>
+    ${cfg.apkUrl?`<button class="bigbtn" id="updbtn">${ic('dn')} Baixar atualização</button>`:'<div class="note" style="text-align:center">Peça o app novo ao @guucds.</div>'}
+    <div class="contact">Suporte <b>@guucds</b><br><a href="https://wa.me/${WHATS}">WhatsApp (99) 98400-3657</a></div></div>`;
+  const u=g.querySelector('#updbtn');if(u)u.onclick=()=>{try{if(NATIVE&&window.AndroidBLE.openUrl)window.AndroidBLE.openUrl(cfg.apkUrl);else window.open(cfg.apkUrl,'_blank')}catch(e){window.open(cfg.apkUrl,'_blank')}};
+}
 function gateCheck(silent){
   const g=$('#gate');
   if(!NATIVE){g.className='';g.innerHTML='';return}   // navegador = prévia, sem bloqueio
   const _cfg=RC.read();
+  // atualização obrigatória (quem tem internet é forçado a baixar a nova versão)
+  if(_cfg.minVer&&cmpVer(APP_VERSION,_cfg.minVer)<0){ showUpdateGate(_cfg); return; }
   if(_cfg.mode!=='paid'){g.className='';g.innerHTML='';return}   // modo grátis = liberado p/ todos
   if(LIC.active()){g.className='';g.innerHTML='';return}
-  if(RC.ageDays()<(_cfg.blockDays||0)){g.className='';g.innerHTML='';return}   // ainda no período de carência
+  if(RC.ageDays()<RC.freeDays()){g.className='';g.innerHTML='';return}   // ainda no mês grátis
   LIC.tick();const st=LIC.state();
   if(st==='active'){g.className='';g.innerHTML='';return}
   if(silent&&g.classList.contains('on'))return;
@@ -1417,12 +1425,11 @@ function gateCheck(silent){
       <div class="plans">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}</div>
       <div class="note" style="text-align:center;margin-bottom:12px">Toque no plano para pedir no WhatsApp. Pague no PIX <b>(99) 98400-3657</b> e receba a chave.</div>
       ${code}<input class="field" id="gk" placeholder="Cole a chave (DSC1...)" autocapitalize="off"><button class="bigbtn" id="gok">${ic('check')} Ativar</button>
-      ${LIC.trialLeft()?`<button class="ghost" id="gtrial" style="margin-top:10px">Testar grátis por 3 dias</button>`:''}${contact}</div>`;
+      ${contact}</div>`;
   }
   g.querySelector('#gcp').onclick=()=>{navigator.clipboard?.writeText(LIC.codeFmt());toast('Código copiado')};
   g.querySelector('#gok').onclick=async()=>{const r=await LIC.activate(g.querySelector('#gk').value);toast(r.msg);if(r.ok){gateCheck();renderAll()}};
   g.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>askPlan(+b.dataset.plan));
-  const tr=g.querySelector('#gtrial');if(tr)tr.onclick=()=>{if(LIC.startTrial()){toast('3 dias grátis liberados!');gateCheck();renderAll()}};
 }
 
 
@@ -1579,7 +1586,7 @@ function promptName(title,val,cb,ph){
 function confirmSheet(t,p,btn,cb){const d=sheet(`<h3>${esc(t)}</h3><p>${esc(p)}</p><div class="row2"><button class="btn2" id="no">Cancelar</button><button class="bigbtn" id="yes">${esc(btn)}</button></div>`);d.querySelector('#no').onclick=closeSheet;d.querySelector('#yes').onclick=()=>{closeSheet();cb()}}
 function pickPlaylist(keys){
   const d=sheet(`<h3>Adicionar à playlist</h3><p>${keys.length} música(s)</p>
-    ${S.playlists.map(p=>`<button class="plc" data-pick="${p.id}">${coverHTML(IDB.mem['p:'+p.id],p.name)}<span><b>${esc(p.name)}</b><small>${p.items.length} músicas</small></span></button>`).join('')}
+    ${S.playlists.map(p=>`<button class="plc" data-pick="${p.id}">${coverHTML(IDB.mem['p:'+p.id],p.name,'','','list')}<span><b>${esc(p.name)}</b><small>${p.items.length} músicas</small></span></button>`).join('')}
     <button class="ghost" id="newpl">${ic('plus')} Nova playlist</button>`);
   d.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{const p=S.playlists.find(x=>x.id===b.dataset.pick);let n=0;keys.forEach(k=>{if(!p.items.includes(k)){p.items.push(k);n++}});save.pl();closeSheet();toast(n+' adicionada(s) em '+p.name)});
   d.querySelector('#newpl').onclick=()=>promptName('Nova playlist','',name=>{S.playlists.push({id:'p'+Date.now(),name,items:[...new Set(keys)]});save.pl();toast(keys.length+' em '+name)});
