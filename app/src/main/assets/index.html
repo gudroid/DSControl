@@ -127,6 +127,9 @@ nav#tabs button.on svg{color:var(--acc);transform:translateY(-1px) scale(1.06)}
 .nowcard .meta{flex:1;min-width:0}
 .nowcard .meta b{display:block;font-size:17px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nowcard .meta small{color:var(--sub);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.time{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
+.time .bar{flex:1;height:6px;border-radius:9px;background:#ffffff1e;overflow:hidden}
+.time .bar i{display:block;height:100%;background:var(--grad);width:0;transition:width .9s linear}
 .expand{width:40px;height:40px;border-radius:12px;background:#ffffff10;display:grid;place-items:center;color:var(--sub);flex:none}
 .expand svg{width:20px;height:20px}
 .mini-transport{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
@@ -229,7 +232,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #player .pbg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(60px) saturate(1.6) brightness(.6);transform:scale(1.2);z-index:0}
 #player .pshade{position:absolute;inset:0;background:linear-gradient(180deg,#08080b55,#08080bdd 55%,#08080b);z-index:0}
 #player .pinner{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 22px calc(22px + env(safe-area-inset-bottom));overflow-y:auto}
-#player .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#player .phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;position:relative}
+#player .pclock{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:850;letter-spacing:1px;font-variant-numeric:tabular-nums;pointer-events:none}
+#player .pright{display:flex;gap:8px}
+#player .ptime .bar{cursor:pointer}
 #player .phead .pill{background:#ffffff14}
 #player .pdown{width:42px;height:42px;border-radius:13px;background:#ffffff12;display:grid;place-items:center}
 #player .pdown svg{width:22px;height:22px}
@@ -237,7 +243,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #player .pt{font-size:25px;font-weight:850;letter-spacing:-.5px;text-align:center;line-height:1.18;word-break:break-word}
 #player .ps{color:var(--sub);font-size:14px;text-align:center;margin-top:7px;font-weight:600}
 #player .ptime{display:flex;align-items:center;gap:11px;margin-top:22px;font-size:12px;font-weight:700;color:var(--sub);font-variant-numeric:tabular-nums}
-#player .ptime .bar{flex:1;height:6px;border-radius:9px;background:#ffffff1e;overflow:hidden}
+#player .ptime{padding:4px 0}
+#player .ptime .bar{flex:1;height:8px;border-radius:9px;background:#ffffff1e;overflow:hidden}
 #player .ptime .bar i{display:block;height:100%;background:var(--grad);width:0;transition:width .9s linear}
 #player .ptransport{display:flex;align-items:center;justify-content:center;gap:clamp(10px,5vw,26px);margin-top:20px}
 #player .pvol{display:flex;align-items:center;gap:12px;margin-top:22px}
@@ -260,6 +267,24 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #npPanel .pextra{display:flex;gap:8px;margin-top:16px}#npPanel .pextra .btn2{flex:1;font-size:13px;padding:11px}
 #npPanel .tb{width:46px;height:46px}#npPanel .tb.big{width:60px;height:60px}#npPanel .tb.sm{width:38px;height:38px}
 #npPanel .tb svg{width:21px;height:21px}#npPanel .tb.big svg{width:26px;height:26px}#npPanel .tb.sm svg{width:18px;height:18px}
+
+/* fonte BT / RCA / toggles */
+.vol{display:flex;align-items:center;gap:12px}
+.vol svg{width:20px;height:20px;color:var(--sub)}
+.vol .num{min-width:28px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.appsrow{display:flex;gap:8px;justify-content:space-between;overflow-x:auto;padding-bottom:2px}
+.appbtn{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;min-width:56px}
+.appbtn .ab{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--c);color:#fff;box-shadow:0 8px 18px -8px var(--c);transition:transform .12s var(--ease)}
+.appbtn:active .ab{transform:scale(.9)}
+.appbtn .ab svg{width:25px;height:25px}
+.appbtn small{font-size:11px;color:var(--sub);font-weight:600;white-space:nowrap}
+.tgl{width:48px;height:28px;border-radius:999px;background:var(--surf3);position:relative;flex:none;transition:.2s;border:1px solid var(--line);cursor:pointer}
+.tgl.on{background:var(--grad);border-color:transparent}
+.tgl::after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s var(--ease)}
+.tgl.on::after{left:22px}
+.linkbtn{display:flex;align-items:center;gap:8px;justify-content:center;padding:9px;border-radius:12px;border:1px solid var(--line);color:var(--sub);font-size:12px;font-weight:700;margin:10px 0}
+.linkbtn.on{border-color:#ff2e4666;color:#ff8f99;background:var(--acc-soft)}
+.linkbtn svg{width:16px;height:16px;flex:none}
 
 /* ===== FOLHAS ===== */
 .sheetbg{position:fixed;inset:0;background:#000b;z-index:60;display:flex;align-items:flex-end;justify-content:center;animation:fadein .2s}
@@ -383,7 +408,12 @@ const I={
  shield:'<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
  star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/>',
  copy:'<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
- info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'
+ info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+ full:'<path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4"/>',
+ fullexit:'<path d="M9 4v4a1 1 0 0 1-1 1H4M15 4v4a1 1 0 0 0 1 1h4M9 20v-4a1 1 0 0 0-1-1H4M15 20v-4a1 1 0 0 1 1-1h4"/>',
+ insta:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>',
+ wa:'<path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z"/><path d="M8.5 8.5c0 4 3 7 7 7 .6 0 1-.5 1-1l-.2-1.3-2-.7-1 1a6 6 0 0 1-2.8-2.8l1-1-.7-2L9.5 7.5c-.5 0-1 .4-1 1z"/>',
+ pix:'<path d="M12 3 4 11a1.4 1.4 0 0 0 0 2l8 8 8-8a1.4 1.4 0 0 0 0-2z"/>'
 };
 const ic=(n,ex='')=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ${ex}>${I[n]||''}</svg>`;
 const $=s=>document.querySelector(s);
@@ -478,9 +508,23 @@ const LIC={
     }catch(e){return{ok:false,msg:'Chave inválida'}}
   },
   trialLeft(){return !this.read().trial},
-  startTrial(){const o=this.read();if(o.trial)return false;o.trial=1;o.exp=Math.max(o.exp,this.now())+DAY;this.write(o);return true}
+  startTrial(){const o=this.read();if(o.trial)return false;o.trial=1;o.exp=Math.max(o.exp,this.now())+3*DAY;this.write(o);return true}
 };
 const WHATS='5599984003657';
+const CONFIG_URL='https://raw.githubusercontent.com/gudroid/dscontrol-config/main/config.json';
+const RC={
+  read(){return LS.get('dsc_cfg',{mode:'free',issue:-1})},
+  mode(){return this.read().mode||'free'},
+  async fetch(){
+    try{const r=await fetch(CONFIG_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const txt=await r.text();
+      const i=txt.indexOf('DSCFG.');if(i<0)return;let k=txt.slice(i+6);const AL='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';let e=0;while(e<k.length&&AL.indexOf(k[e])>=0)e++;k=k.slice(0,e);
+      const raw=Uint8Array.from(atob(k.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+      if(raw.length!==72)return;const pay=raw.slice(0,8),sig=raw.slice(8,72);
+      if(pay[0]!==67||!await LIC.verify(pay,sig))return;
+      const issue=(pay[2]<<8)|pay[3];const cur=this.read();if(issue>=cur.issue)LS.set('dsc_cfg',{mode:pay[1]===1?'paid':'free',issue});
+    }catch(e){}
+  }
+};
 
 
 /* ================= ESTADO ================= */
@@ -499,7 +543,8 @@ const S={
   gain:LS.get('dsp_gain',{}),phase:LS.get('dsp_phase',{}),delay:LS.get('dsp_delay',{}),xo:LS.get('dsp_xo',{}),
   nav:{path:[],scroll:{}},
   view:LS.get('dsp_view','grid'),sort:LS.get('dsp_sort','az'),q:'',
-  openPl:null,libTab:'playlists',scan:null,sleepAt:null
+  openPl:null,libTab:'playlists',scan:null,sleepAt:null,
+  sens:LS.get('dsp_sens',{g0:100,g1:100,link:false}),autoconn:LS.get('dsp_autoconn',0),autopower:LS.get('dsp_autopower',0),audiopass:LS.get('dsp_audiopass',0),full:false
 };
 
 
@@ -515,6 +560,7 @@ const ASCII=s=>new TextEncoder().encode(s);
 const CMD={play:'C0000400',pause:'C0000410',next:'C0000050',prev:'C0000060',fnext:'C0000070',fprev:'C0000080',fwd:'C0000470',rew:'C0000480'};
 const RESP={'1':0,'2':1,'A':65,'X':88,'Y':89,'Q':81,'T':84,'j':106,'k':107,'l':108};
 const SOURCES=[['1','USB','usb'],['4','Bluetooth','bt'],['7','RCA','rca']];
+const PLANS=[['1 mês','R$ 13,99'],['6 meses','R$ 59,99'],['Vitalício','R$ 149,99']];
 const MODES=[[1,'Sequência','seq'],[2,'Repetir','rep'],[3,'Pasta','folder'],[4,'Aleatório','shuf']];
 const EQCH=[['A','CH1 • CH2'],['C','CH3 • CH4'],['E','OUT1 • OUT2']];
 const CHS=[['A','CH1'],['B','CH2'],['C','CH3'],['D','CH4'],['E','OUT1'],['F','OUT2']];
@@ -729,6 +775,13 @@ function setVolume(v){
 function setSource(code){S.source=code;LS.set('dsp_src',code);const b=upd('2');b[4]=code.charCodeAt(0);send(b,'fonte');renderAll();toast('Fonte: '+SOURCES.find(s=>s[0]===code)[1])}
 function setPMode(m){S.pmode=m;LS.set('dsp_pmode',m);const b=upd('5');b[5]=m;send(b,'modo');renderAll()}
 function setPower(on){S.power=on;LS.set('dsp_power',on);const b=upd('P');b[2]=on?1:0;send(b,on?'ligar':'desligar');if(!on)S.playing=false;renderAll();toast(on?'Ligando o aparelho':'Desligando o aparelho')}
+let sensT={};
+function setSens(g,val){S.sens=S.sens||{g0:100,g1:100};S.sens['g'+g]=val;if(S.sens.link)S.sens['g'+(g?0:1)]=val;LS.set('dsp_sens',S.sens);clearTimeout(sensT[g]);sensT[g]=setTimeout(()=>{const s1=(gr,v)=>{const b=upd('4');b[4]=gr;b[5]=v;send(b,'sensibilidade '+(gr?'CH3/CH4':'CH1/CH2'))};s1(g,val);if(S.sens.link)s1(g?0:1,val)},250)}
+function sendName(name){name=(name||'').toUpperCase().slice(0,10).padEnd(10,' ');const b=upd('a');const pos=[1,2,3,4,5,7,8,9,10,11];for(let i=0;i<10;i++)b[pos[i]]=name.charCodeAt(i);send(b,'nome');toast('Nome enviado')}
+function setAutoPower(on){S.autopower=on?1:0;LS.set('dsp_autopower',S.autopower);const b=upd('i');b[4]=on?1:0;send(b,'ligar ao energizar')}
+function setAudioPass(on){S.audiopass=on?1:0;LS.set('dsp_audiopass',S.audiopass);const b=upd('g');b[2]=on?1:0;send(b,'senha de áudio')}
+function delDevices(){send(ASCII('C0000450'),'excluir pareados');toast('Aparelhos pareados excluídos')}
+function resetDevice(){send(ASCII('C0000460'),'reset');toast('Comando de reset enviado')}
 
 /* ---------- troca de faixa: fila e playlist ---------- */
 function onTrackChanged(prev,cur){
@@ -776,6 +829,13 @@ function buildTree(){
 const countDeep=n=>n.tracks.length+Object.values(n.folders).reduce((a,f)=>a+countDeep(f),0);
 const allTracks=n=>[...n.tracks,...Object.values(n.folders).flatMap(allTracks)];
 const hasIndex=(n,i)=>n.tracks.some(t=>t.i===i)||Object.values(n.folders).some(f=>hasIndex(f,i));
+function autoGroupFolders(){
+  const names=allFolderNames();let n=0;
+  const seps=[/\s*[\\\/]\s*/,/\s+-\s+/,/\s*[|>]\s*/];
+  names.forEach(f=>{for(const re of seps){const parts=f.split(re).filter(Boolean);
+    if(parts.length>=2){const parent=parts[0].trim();if(parent&&parent!==f&&!S.parent[f]){S.parent[f]=parent;n++}break}}});
+  save.parent();return n;
+}
 const allFolderNames=()=>[...new Set([...(S.lib?.tracks||[]).map(t=>t.folder).filter(Boolean),...Object.keys(S.parent),...Object.values(S.parent)])].sort((a,b)=>a.localeCompare(b,'pt',{numeric:true}));
 
 /* ---------- leitura rápida do pendrive ----------
@@ -1087,7 +1147,7 @@ function renderPanel(){const p=$('#npPanel');if(getComputedStyle(p).display==='n
 /* ---- mini player ---- */
 function renderMini(){
   const m=$('#mini');const tr=trackByIndex(S.status.index);
-  const show=S.tab!=='home'&&!S.player&&S.mode!=='off'&&S.status.index>=0;
+  const show=S.tab!=='home'&&!S.player&&S.mode!=='off'&&S.source==='1'&&S.status.index>=0;
   m.classList.toggle('hide',!show);if(!show)return;
   m.innerHTML=`<div class="prog"></div><button data-open-player="1" style="display:block">${coverHTML(coverOf(tr),tr?tr.name:'DS')}</button>
     <button class="t" data-open-player="1" style="text-align:left"><b>${esc(tr?cleanName(tr.name):'Faixa '+S.status.index)}</b><small class="mt">${S.queue?'Playlist':esc(tr?.folder||'')}${S.upnext.length?' · fila '+S.upnext.length:''}</small></button>
@@ -1111,11 +1171,11 @@ function PlayerInner(panel){
   const fav=tr&&S.favs.includes(tkey(tr));
   const p=Math.round(S.volume/50*100);
   const src=SOURCES.find(s=>s[0]===S.source);
-  return `${panel?'':`<div class="phead"><button class="pdown" data-close-player="1">${ic('down')}</button><span class="pill">${pl?esc(pl.name):(tr?esc(folderPath(tr.folder).join(' › ')||'Pendrive'):'DS Player')}</span><button class="pdown" data-do="queue2">${ic('queue')}</button></div>`}
+  return `${panel?'':`<div class="phead"><button class="pdown" data-close-player="1">${ic('down')}</button><span class="pclock clock">--:--</span><div class="pright"><button class="pdown" data-do="full">${ic(S.full?'fullexit':'full')}</button><button class="pdown" data-do="queue2">${ic('queue')}</button></div></div>`}
     ${coverHTML(cov,tr?tr.name:'DS','part')}
     <div class="pt">${esc(tr?cleanName(tr.name):(S.status.index>=0?'Faixa '+S.status.index:'Nada tocando'))}</div>
     <div class="ps">${tr?esc(folderPath(tr.folder).join(' › ')||'Pendrive'):'—'}${S.status.total?' · '+S.status.index+'/'+S.status.total:''}</div>
-    <div class="ptime"><span class="tc">--:--</span><div class="bar"><i></i></div><span class="tf">--:--</span></div>
+    <div class="ptime"><span class="tc">--:--</span><div class="bar" data-seek="1"><i></i></div><span class="tf">--:--</span></div>
     <div class="ptransport">
       <button class="tb sm" data-act="fprev">${ic('fprev')}</button>
       <button class="tb" data-act="prev">${ic('prev')}</button>
@@ -1135,20 +1195,47 @@ function renderPlayer(){
   if(!S.player){pe.innerHTML='';return}
   const tr=trackByIndex(S.status.index);const cov=coverOf(tr);
   pe.innerHTML=`${cov?`<div class="pbg" style="background-image:url('${cov}')"></div>`:''}<div class="pshade"></div><div class="pinner ${S.playing?'':'paused'}"><div class="maxw">${PlayerInner(false)}</div></div>`;
-  bind(pe);
+  bind(pe);tickClock();
 }
-function openPlayer(){if(S.mode==='off')return;S.player=true;renderPlayer();renderMini();paintTime()}
-function closePlayer(){S.player=false;renderPlayer();renderMini()}
+function toggleSetting(k){
+  if(k==='autoconn'){S.autoconn=S.autoconn?0:1;LS.set('dsp_autoconn',S.autoconn);toast(S.autoconn?'Vai conectar sozinho ao abrir':'Conexão automática desligada');renderKeep();return}
+  if(k==='autopower'){setAutoPower(!S.autopower);renderKeep();return}
+  if(k==='audiopass'){setAudioPass(!S.audiopass);renderKeep();return}
+}
+function setFull(on){S.full=on;try{if(NATIVE&&window.AndroidBLE.fullscreen)window.AndroidBLE.fullscreen(on)}catch(e){}renderPlayer()}
+function openPlayer(){if(S.mode==='off')return;S.player=true;renderPlayer();renderMini();paintTime();tickClock()}
+function closePlayer(){S.player=false;if(S.full)setFull(false);renderPlayer();renderMini()}
+function tickClock(){const t=new Date();const hh=String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');document.querySelectorAll('.clock').forEach(e=>e.textContent=hh)}
+setInterval(tickClock,10000);
 
 /* ================= TELAS ================= */
+function srcCard(){return `<div class="card"><div class="label"><span>Fonte de áudio</span>${S.power?'':'<span class="pill acc">Desligado</span>'}</div><div class="seg">${SOURCES.map(([c,n,i])=>`<button class="${S.source===c?'on':''}" data-src="${c}">${ic(i)}${n}</button>`).join('')}</div></div>`}
+function volCard(){const p=Math.round(S.volume/50*100);return `<div class="card"><div class="label">Volume geral</div><div class="vol">${ic('vol')}<input type="range" class="volr" min="0" max="50" value="${S.volume}" style="--p:${p}%"><span class="num volN">${S.volume}</span></div></div>`}
+function modeCard(){return `<div class="card"><div class="label">Modo de reprodução</div><div class="seg">${MODES.map(([m,n,i])=>`<button class="${S.pmode===m?'on':''}" data-pm="${m}">${ic(i)}${n}</button>`).join('')}</div></div>`}
+const APPS=[['Spotify','#1DB954','https://open.spotify.com'],['YT Music','#FF0000','https://music.youtube.com'],['Deezer','#A238FF','https://www.deezer.com'],['SoundCloud','#FF5500','https://soundcloud.com'],['Amazon','#25D1DA','https://music.amazon.com']];
+function BtScreen(){
+  return `<div class="card"><div class="label">Acesso rápido aos apps de música</div>
+    <div class="appsrow">${APPS.map(a=>`<button class="appbtn" data-openapp="${a[2]}"><span class="ab" style="--c:${a[1]}">${ic('music')}</span><small>${a[0]}</small></button>`).join('')}</div>
+    <p class="note" style="margin-top:12px">No modo Bluetooth o som vem do celular. Use os botões abaixo para tocar/pausar e os apps acima para escolher a música.</p></div>
+   ${volCard()}
+   <div class="card"><div class="label">Controles</div><div class="mini-transport" style="justify-content:center;gap:24px"><button class="tb" data-act="prev">${ic('prev')}</button><button class="tb big" data-act="toggle">${ic(S.playing?'pause':'play')}</button><button class="tb" data-act="next">${ic('next')}</button></div></div>`;
+}
+function RcaScreen(){
+  const s0=S.sens?.g0??100,s1=S.sens?.g1??100,link=!!S.sens?.link;
+  const row=(id,lbl,v)=>`<div class="sw" style="flex-direction:column;align-items:stretch;gap:8px"><b>${lbl}</b><div class="vol"><input type="range" class="sensr" data-sens="${id}" min="0" max="100" value="${v}" style="--p:${v}%"><span class="num" id="sv${id}">${v}%</span></div></div>`;
+  return `${volCard()}
+   <div class="card"><div class="label">Sensibilidade de entrada RCA</div>
+     ${row('0','CH1 / CH2',s0)}
+     <button class="linkbtn ${link?'on':''}" data-linksens="1">${ic('refresh')} ${link?'Canais ligados (mexe nos dois juntos)':'Ligar CH1/CH2 e CH3/CH4'}</button>
+     ${row('1','CH3 / CH4',s1)}
+     <p class="note" style="margin-top:8px">Ajuste quando a entrada RCA estiver muito baixa ou distorcendo. 100% = máximo.</p>
+   </div>`;
+}
 function Home(){
   if(S.mode==='off')return ConnectCard()+(S.lib?.tracks?.length?Shortcuts():'');
-  return `${licBanner()}${NowCard()}${ScanBar()}
-  <div class="card"><div class="label"><span>Fonte</span>${S.power?'':'<span class="pill acc">Desligado</span>'}</div>
-    <div class="seg">${SOURCES.map(([c,n,i])=>`<button class="${S.source===c?'on':''}" data-src="${c}">${ic(i)}${n}</button>`).join('')}</div></div>
-  <div class="card"><div class="label">Modo de reprodução</div>
-    <div class="seg">${MODES.map(([m,n,i])=>`<button class="${S.pmode===m?'on':''}" data-pm="${m}">${ic(i)}${n}</button>`).join('')}</div></div>
-  ${UpNext()}${Shortcuts()}`;
+  if(S.source==='4')return `${licBanner()}${srcCard()}${BtScreen()}`;
+  if(S.source==='7')return `${licBanner()}${srcCard()}${RcaScreen()}`;
+  return `${licBanner()}${NowCard()}${ScanBar()}${srcCard()}${modeCard()}${UpNext()}${Shortcuts()}`;
 }
 function Shortcuts(){
   const favs=S.favs.map(trackByKey).filter(Boolean);
@@ -1169,6 +1256,7 @@ function Folders(){
       `<div class="sect"><b>${res.length} música(s)</b></div>`+(res.map(t=>TrackRow(t,true)).join('')||'<div class="empty">Nada encontrado</div>');
   }
   const n=curNode(),path=S.nav.path;
+  const orgBtn=!path.length?`<div class="card" style="display:flex;gap:12px;align-items:center;padding:12px 14px"><div style="flex:1;min-width:0"><b style="font-size:13px">Organizar pastas automaticamente</b><div class="note">Agrupa pastas que tenham o nome do grupo (ex.: "FORRÓ - Banda X" vira Banda X dentro de FORRÓ).</div></div><button class="btn2" data-do="autogroup">${ic('move')} Organizar</button></div>`:'';
   const crumbs=`<div class="crumbs">${path.length?`<button class="back" data-do="up">${ic('back')}Voltar</button>`:''}
     <button class="crumb ${path.length?'':'cur'}" data-go="0">Pendrive</button>
     ${path.map((p,k)=>`<span style="color:#444">›</span><button class="crumb ${k===path.length-1?'cur':''}" data-go="${k+1}">${esc(p)}</button>`).join('')}</div>`;
@@ -1178,7 +1266,7 @@ function Folders(){
   const head=path.length?`<div class="card" style="display:flex;gap:14px;align-items:center">${coverHTML(coverOfFolder(n),n.name,'','width:84px;height:84px',null)}
      <div style="flex:1;min-width:0"><b style="font-size:18px;display:block;word-break:break-word">${esc(n.name)}</b><small class="note">${countDeep(n)} músicas</small>
      <div class="row2" style="margin-top:10px"><button class="btn2" data-do="playfolder">${ic('play')} Tocar</button><button class="btn2" data-fmenu="${esc(n.name)}">${ic('more')}</button></div></div></div>`:'';
-  return ScanBar()+tools+crumbs+head+
+  return ScanBar()+tools+orgBtn+crumbs+head+
    (folders.length?`<div class="sect"><b>Pastas</b><span class="note">${sortLbl}</span></div><div class="${S.view==='grid'?'fgrid':'flist'}">${folders.map(FolderCard).join('')}</div>`:'')+
    (tracks.length?`<div class="sect"><b>Músicas</b></div>${tracks.map(t=>TrackRow(t)).join('')}`:'')+
    (!folders.length&&!tracks.length?'<div class="empty">Pasta vazia</div>':'');
@@ -1214,14 +1302,15 @@ function Library(){
 }
 
 function Settings(){
-  const st=LIC.state();const stName={active:'Ativo',expired:'Expirado',blocked:'Bloqueado',none:'Sem licença'}[st];
+  const free=RC.mode()!=='paid';const st=LIC.state();const stName=free?'Grátis':{active:'Ativo',expired:'Expirado',blocked:'Bloqueado',none:'Sem licença'}[st];
   const sleepLeft=S.sleepAt?Math.max(0,Math.round((S.sleepAt-Date.now())/60000)):0;
   return `<h1 class="title">Ajustes</h1>
-  <div class="card"><div class="label"><span>Licença (aluguel)</span><span class="pill ${st==='active'?'ok':st==='blocked'?'acc':'warn'}">${stName}</span></div>
+  <div class="card"><div class="label"><span>Licença</span><span class="pill ${free||st==='active'?'ok':st==='blocked'?'acc':'warn'}">${stName}</span></div>${free?`<p class="note" style="margin-bottom:10px">O app está liberado gratuitamente por tempo limitado. Aproveite!</p>`:``}
     <div class="sw"><span>Código do aparelho</span><b style="letter-spacing:1px">${LIC.codeFmt()}</b></div>
     ${st==='active'?`<div class="sw"><span>Tempo restante</span><b>${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}</b></div>`:''}
     <div style="margin-top:12px"><button class="bigbtn" data-do="activate">${ic('key')} ${st==='active'?'Renovar / adicionar chave':'Ativar com chave'}</button></div>
-    <p class="note" style="margin-top:10px">Aluguel mensal com @guucds. Fale pelo WhatsApp (99) 98400-3657.</p>
+    <div class="plans" style="display:flex;gap:9px;margin-top:12px">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}" style="flex:1;background:var(--surf2);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center"><b style="display:block">${p[1]}</b><small style="color:var(--dim);font-size:11px">${p[0]}</small></button>`).join('')}</div>
+    <p class="note" style="margin-top:10px">Toque no plano para pedir no WhatsApp. PIX <b>(99) 98400-3657</b>.</p>
   </div>
   <div class="card"><div class="label">Aparelho</div>
     <div class="sw"><span>Conexão</span><b>${{off:'Desconectado',ble:'Conectado',demo:'Demonstração'}[S.mode]}</b></div>
@@ -1235,17 +1324,30 @@ function Settings(){
     <div class="sw"><span>Pastas</span><b>${allFolderNames().length}</b></div>
     <p class="note" style="margin:10px 0">A lista fica salva no celular. Leia de novo quando trocar as músicas do pendrive.</p>
     <div class="row2"><button class="btn2" data-do="rescan">${ic('refresh')} Ler de novo</button><button class="btn2" data-do="resetorg">Desfazer organização</button></div></div>
+  <div class="card"><div class="label">Aparelho (avançado)</div>
+    <div class="sw"><span>Conectar sozinho ao abrir</span><div class="tgl ${S.autoconn?'on':''}" data-tgl="autoconn"></div></div>
+    <div class="sw"><span>Ligar quando energizar</span><div class="tgl ${S.autopower?'on':''}" data-tgl="autopower"></div></div>
+    <div class="sw"><span>Senha de áudio (Bluetooth)</span><div class="tgl ${S.audiopass?'on':''}" data-tgl="audiopass"></div></div>
+    <button class="btn2" style="width:100%;margin-top:10px" data-do="rename">${ic('edit')} Mudar o nome do aparelho</button>
+    <div class="row2" style="margin-top:10px"><button class="btn2 danger" data-do="deldev">Excluir pareados</button><button class="btn2 danger" data-do="resetdev">Resetar aparelho</button></div>
+  </div>
   <div class="card"><div class="label">Senha do DS Player</div>
     <div class="sw"><span>Senha salva</span><b>${'•'.repeat(String(LS.get('dsp_pass','1234')).length)}</b></div>
     <button class="btn2" style="width:100%;margin-top:10px" data-do="pass">Trocar senha salva</button></div>
   <div class="card"><div class="label">Diagnóstico</div>
     <div class="row2"><button class="btn2" data-do="diag">Ver diagnóstico</button><button class="btn2" data-do="copydiag">Copiar</button></div></div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.0 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Redes sociais do @guucds</div>
+    <a class="mi" href="https://instagram.com/guucds" target="_blank">${ic('insta')} @guucds</a>
+    <a class="mi" href="https://instagram.com/fiatdodj" target="_blank">${ic('insta')} @fiatdodj</a>
+    <a class="mi" href="https://instagram.com/s10dodj" target="_blank">${ic('insta')} @s10dodj</a>
+    <a class="mi" href="https://wa.me/${WHATS}" target="_blank">${ic('wa')} WhatsApp (99) 98400-3657</a>
+  </div>
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.1 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
 function licBanner(){
-  if(!NATIVE)return '';const st=LIC.state();
+  if(!NATIVE||RC.mode()!=='paid')return '';const st=LIC.state();
   if(st==='active'&&LIC.leftDays()<=3)return `<div class="licbanner warn">${ic('clock')}<span>Seu aluguel vence em ${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Renovar</b></span></div>`;
   return '';
 }
@@ -1266,7 +1368,10 @@ function activateSheet(unlock){
       <button class="pill" id="cpcode">${ic('copy','style="width:12px;height:12px;display:inline"')} Copiar código</button></div>
     <input class="field" id="lickey" placeholder="Cole a chave aqui (DSC1...)" autocapitalize="off" autocomplete="off">
     <button class="bigbtn" id="licok">${ic('check')} Ativar</button>
-    <a href="https://wa.me/${WHATS}?text=${encodeURIComponent('Quero alugar o DS Control. Meu código é '+LIC.codeFmt())}" style="display:block;text-align:center;margin-top:12px;color:#25D366;font-weight:700;text-decoration:none">Falar no WhatsApp</a>`);
+    <div class="label" style="margin-top:16px">Planos — toque para pedir</div>
+    <div class="plans">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}</div>
+    <div class="note" style="text-align:center;margin-top:8px">PIX <b>(99) 98400-3657</b></div>`);
+  d.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>askPlan(+b.dataset.plan));
   d.querySelector('#cpcode').onclick=()=>{navigator.clipboard?.writeText(LIC.codeFmt());toast('Código copiado')};
   d.querySelector('#licok').onclick=async()=>{
     const r=await LIC.activate(d.querySelector('#lickey').value);
@@ -1274,16 +1379,18 @@ function activateSheet(unlock){
     if(r.ok){closeSheet();gateCheck();renderAll()}
   };
 }
+function askPlan(i){const p=PLANS[i];const msg='Olá @guucds! Quero o plano *'+p[0]+'* ('+p[1]+') do DS Control.\nMeu código do aparelho: '+LIC.codeFmt()+'\nVou pagar no PIX (99) 98400-3657.';window.open('https://wa.me/'+WHATS+'?text='+encodeURIComponent(msg),'_blank')}
 /* ---- gate (overlay bloqueante) ---- */
 function gateCheck(silent){
   const g=$('#gate');
   if(!NATIVE){g.className='';g.innerHTML='';return}   // navegador = prévia, sem bloqueio
+  if(RC.mode()!=='paid'){g.className='';g.innerHTML='';return}   // modo grátis = liberado p/ todos
   LIC.tick();const st=LIC.state();
   if(st==='active'){g.className='';g.innerHTML='';return}
   if(silent&&g.classList.contains('on'))return;
   g.className='on'+(st==='blocked'?' locked':'');
   const code=`<div class="codebox"><small>Código do aparelho</small><div class="code">${LIC.codeFmt()}</div><button id="gcp">${ic('copy','style="width:12px;height:12px;display:inline;vertical-align:-1px"')} Copiar</button></div>`;
-  const contact=`<div class="contact">Aluguel com <b>@guucds</b><br><a href="https://wa.me/${WHATS}?text=${encodeURIComponent('Quero alugar o DS Control. Código: '+LIC.codeFmt())}">WhatsApp (99) 98400-3657</a></div>`;
+  const contact=`<div class="contact">Aluguel com <b>@guucds</b><br><a href="https://wa.me/${WHATS}?text=${encodeURIComponent('Quero alugar o DS Control. Código: '+LIC.codeFmt())}">WhatsApp (99) 98400-3657</a><br><span style="color:var(--dim)">PIX: (99) 98400-3657</span></div>`;
   if(st==='blocked'){
     g.innerHTML=`<div class="gin"><div class="glogo">${ic('lock')}</div><h2>Aplicativo bloqueado</h2>
       <div class="gsub">${esc(LIC.reason()||'Proteção acionada.')}. Peça ao @guucds a chave de desbloqueio.</div>
@@ -1291,13 +1398,15 @@ function gateCheck(silent){
   }else{
     g.innerHTML=`<div class="gin"><div class="glogo">${ic('music')}</div><h2>${st==='expired'?'Seu aluguel venceu':'Ative o DS Control'}</h2>
       <div class="gsub">${st==='expired'?'Renove para continuar usando.':'Alugue o app para controlar seu DS Player.'}</div>
-      <div class="plans"><div class="pl"><b>30d</b><small>mensal</small></div><div class="pl"><b>90d</b><small>trimestral</small></div><div class="pl"><b>1 ano</b><small>anual</small></div></div>
+      <div class="plans">${PLANS.map((p,i)=>`<button class="pl" data-plan="${i}"><b>${p[1]}</b><small>${p[0]}</small></button>`).join('')}</div>
+      <div class="note" style="text-align:center;margin-bottom:12px">Toque no plano para pedir no WhatsApp. Pague no PIX <b>(99) 98400-3657</b> e receba a chave.</div>
       ${code}<input class="field" id="gk" placeholder="Cole a chave (DSC1...)" autocapitalize="off"><button class="bigbtn" id="gok">${ic('check')} Ativar</button>
-      ${LIC.trialLeft()?`<button class="ghost" id="gtrial" style="margin-top:10px">Testar grátis por 24 horas</button>`:''}${contact}</div>`;
+      ${LIC.trialLeft()?`<button class="ghost" id="gtrial" style="margin-top:10px">Testar grátis por 3 dias</button>`:''}${contact}</div>`;
   }
   g.querySelector('#gcp').onclick=()=>{navigator.clipboard?.writeText(LIC.codeFmt());toast('Código copiado')};
   g.querySelector('#gok').onclick=async()=>{const r=await LIC.activate(g.querySelector('#gk').value);toast(r.msg);if(r.ok){gateCheck();renderAll()}};
-  const tr=g.querySelector('#gtrial');if(tr)tr.onclick=()=>{if(LIC.startTrial()){toast('24 horas grátis liberadas!');gateCheck();renderAll()}};
+  g.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>askPlan(+b.dataset.plan));
+  const tr=g.querySelector('#gtrial');if(tr)tr.onclick=()=>{if(LIC.startTrial()){toast('3 dias grátis liberados!');gateCheck();renderAll()}};
 }
 
 
@@ -1335,6 +1444,12 @@ function bind(root){
   root.querySelectorAll('.volr').forEach(vol=>vol.oninput=e=>{const v=+e.target.value;document.querySelectorAll('.volN').forEach(n=>n.textContent=v);document.querySelectorAll('.volr').forEach(r=>{r.value=v;r.style.setProperty('--p',Math.round(v/50*100)+'%')});setVolume(v)});
   const q=root.querySelector('#q');if(q)q.oninput=e=>{S.q=e.target.value;const pos=q.selectionStart;renderKeep();const n=$('#q');n.focus();n.setSelectionRange(pos,pos)};
   on('[data-open-player]',()=>openPlayer());
+  on('[data-plan]',b=>askPlan(+b.dataset.plan));
+  on('[data-openapp]',b=>{const u=b.dataset.openapp;try{if(NATIVE&&window.AndroidBLE.openUrl)window.AndroidBLE.openUrl(u);else window.open(u,'_blank')}catch(e){window.open(u,'_blank')}});
+  on('[data-tgl]',b=>toggleSetting(b.dataset.tgl));
+  on('[data-linksens]',()=>{S.sens.link=!S.sens.link;LS.set('dsp_sens',S.sens);renderKeep()});
+  root.querySelectorAll('[data-sens]').forEach(r=>r.oninput=e=>{const v=+e.target.value;r.style.setProperty('--p',v+'%');const n=$('#sv'+r.dataset.sens);if(n)n.textContent=v+'%';setSens(+r.dataset.sens,v)});
+  on('[data-seek]',(b,e)=>{const r=b.getBoundingClientRect();const x=(e.clientX-r.left)/r.width;const cur=S.time?S.time.cur/S.time.full:0;if(Math.abs(x-cur)<0.02)return;act(x>cur?'fwd':'rew');if(!LS.get('dsp_seeknote',0)){LS.set('dsp_seeknote',1);toast('O DS Player avança/volta em saltos (não dá ponto exato)')}});
   on('[data-close-player]',()=>closePlayer());
   on('[data-libtab]',b=>{S.libTab=b.dataset.libtab;render()});
   on('[data-pm2]',()=>{const i=MODES.findIndex(m=>m[0]===S.pmode);setPMode(MODES[(i+1)%MODES.length][0])});
@@ -1347,6 +1462,11 @@ function doAction(a){
     connect,demo:startDemo,
     activate(){activateSheet(false)},unlock(){activateSheet(true)},
     queue2(){queueSheet()},
+    full(){setFull(!S.full);toast(S.full?'Tela cheia ligada':'Tela cheia desligada')},
+    rename(){promptName('Nome do aparelho (até 10 letras)','',n=>sendName(n),'Ex.: SOM DO GU')},
+    deldev(){confirmSheet('Excluir aparelhos pareados?','Os celulares pareados por Bluetooth serão apagados do aparelho.','Excluir',()=>delDevices())},
+    resetdev(){confirmSheet('Resetar o aparelho?','Volta o DS Player para o padrão de fábrica. Suas playlists e capas no app continuam.','Resetar',()=>resetDevice())},
+    autogroup(){if(S.mode==='off'&&!S.lib)return;const n=autoGroupFolders();toast(n?n+' pasta(s) organizada(s)':'Nada para agrupar automaticamente');S.nav.path=[];renderAll()},
     clearhist(){S.recent=[];LS.set('dsp_recent',[]);renderKeep()},
     disconnect(){if(NATIVE)window.AndroidBLE.disconnect();S.mode='off';S.queue=null;renderAll()},
     scan(){runScan()},rescan(){if(S.mode!=='ble')return toast('Conecte primeiro');confirmSheet('Ler o pendrive de novo?','A lista atual será trocada. Playlists, capas e favoritas continuam.','Ler de novo',()=>{runScan(true);go('folders')})},
@@ -1481,8 +1601,11 @@ async function boot(){
   try{await IDB.open();await IDB.loadAll()}catch(e){}
   try{await LIC.init()}catch(e){}
   renderAll();
-  gateCheck();
+  try{await RC.fetch()}catch(e){}
+  gateCheck();renderAll();
+  if(NATIVE&&S.autoconn&&S.mode==='off'){setTimeout(()=>{try{window.AndroidBLE.autoConnect&&window.AndroidBLE.autoConnect()}catch(e){}},900)}
   setInterval(()=>{try{LIC.tick();gateCheck(true)}catch(e){}},60000);
+  setInterval(()=>{RC.fetch().then(()=>gateCheck(true))},3600000);
 }
 boot();
 

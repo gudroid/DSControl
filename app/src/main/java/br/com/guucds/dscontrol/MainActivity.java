@@ -21,6 +21,8 @@ import android.content.Intent;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.view.View;
+import android.content.SharedPreferences;
 import android.util.Base64;
 import java.math.BigInteger;
 import java.security.KeyFactory;
@@ -127,11 +129,20 @@ public class MainActivity extends Activity {
                 v.initVerify(pk); v.update(pay); return v.verify(der);
             } catch (Exception e) { return false; }
         }
+        @JavascriptInterface public void fullscreen(final boolean on){
+            ui.post(()->{ View d=getWindow().getDecorView();
+              if(on) d.setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_STABLE|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+              else d.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE); });
+        }
         @JavascriptInterface public String deviceId() {
             try { String a = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
                   return a != null ? a : Build.FINGERPRINT; } catch (Exception e) { return ""; }
         }
         @JavascriptInterface public void connect() { ui.post(MainActivity.this::startScan); }
+        @JavascriptInterface public void autoConnect() { ui.post(()->{
+            try{ String a=getSharedPreferences("dsc",0).getString("lastAddr",null);
+                 if(a!=null && adapter!=null && hasPerms()){ connectTo(adapter.getRemoteDevice(a)); } else startScan(); }catch(Exception e){ startScan(); } }); }
+        @JavascriptInterface public void openUrl(String u){ try{ startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(u))); }catch(Exception e){} }
         @JavascriptInterface public void disconnect() {
             ui.post(() -> { userClosed = true; if (gatt != null) { gatt.disconnect(); gatt.close(); gatt = null; } js("onDisconnected", ""); });
         }
@@ -176,6 +187,7 @@ public class MainActivity extends Activity {
     // ---------- conexão ----------
     void connectTo(BluetoothDevice d) {
         lastDevice = d; userClosed = false;
+        try{ getSharedPreferences("dsc",0).edit().putString("lastAddr", d.getAddress()).apply(); }catch(Exception e){}
         if (gatt != null) { gatt.close(); gatt = null; }
         log("conectando em " + d.getName());
         if (Build.VERSION.SDK_INT >= 23) gatt = d.connectGatt(this, false, cb, BluetoothDevice.TRANSPORT_LE);
