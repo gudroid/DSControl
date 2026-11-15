@@ -179,9 +179,20 @@ public class MainActivity extends Activity {
                 .setNegativeButton("Cancelar", (di, w) -> { try { sc.stopScan(cb); } catch (Exception ignored) {} })
                 .create();
         dlg.show();
+        // inclui aparelhos já pareados/conectados (que não aparecem na busca por já estarem em uso)
+        try {
+            for (BluetoothDevice d : adapter.getBondedDevices()) {
+                String n = d.getName();
+                if (n != null && (n.startsWith("DSPlayer") || n.startsWith("DS Player"))) {
+                    boolean dup = false;
+                    for (BluetoothDevice x : found) if (x.getAddress().equals(d.getAddress())) dup = true;
+                    if (!dup) { found.add(d); final String label = n + " (pareado)"; ui.post(() -> names.add(label)); }
+                }
+            }
+        } catch (Exception ignored) {}
         ScanSettings st = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
         sc.startScan(null, st, cb);
-        ui.postDelayed(() -> { try { sc.stopScan(cb); } catch (Exception ignored) {} if (dlg.isShowing() && found.isEmpty()) dlg.setTitle("Nenhum DS Player encontrado"); }, 10000);
+        ui.postDelayed(() -> { try { sc.stopScan(cb); } catch (Exception ignored) {} if (dlg.isShowing()) dlg.setTitle(found.isEmpty() ? "Nenhum DS Player encontrado" : "Toque no seu DS Player"); }, 10000);
     }
 
     // ---------- conexão ----------
