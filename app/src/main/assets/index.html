@@ -539,7 +539,7 @@ const RC={
   ageDays(){return Math.floor((Date.now()-this.born())/DAY)},
   freeDays(){const b=this.read().blockDays;return (b===undefined||b===null)?30:b},
   trialLeft(){return Math.max(0,this.freeDays()-this.ageDays())},
-  read(){return LS.get('dsc_cfg2',{mode:'free',blockDays:30,notice:'',noticeId:0,link:'',linkText:'',minVer:'',apkUrl:'',ping:'',issue:-1})},
+  read(){return LS.get('dsc_cfg2',{mode:'paid',blockDays:30,notice:'',noticeId:0,link:'',linkText:'',minVer:'',apkUrl:'',ping:'',issue:-1})},
   mode(){return this.read().mode||'free'},
   async fetch(){
     try{
@@ -590,7 +590,7 @@ const tkey=t=>t.folder+'|'+t.name;
 
 /* ===== PROTOCOLO / CONEXÃO / BIBLIOTECA / CAPAS ===== */
 const NATIVE=!!window.AndroidBLE;
-const APP_VERSION='4.5';
+const APP_VERSION='4.6';
 function cmpVer(a,b){a=String(a||'0').split('.').map(Number);b=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y}return 0}
 const req=(letter,idx)=>{const b=new Uint8Array(8).fill(0x30);b[0]=0x52;b[6]=letter.charCodeAt(0);if(idx!=null){b[2]=(idx>>8)&255;b[3]=idx&255}return b};
 const upd=letter=>{const b=new Uint8Array(16).fill(0x30);b[0]=0x53;b[6]=letter.charCodeAt(0);return b};
@@ -1379,7 +1379,7 @@ function Settings(){
       <a class="soc wa" href="https://wa.me/${WHATS}" target="_blank"><span class="orb">${ic('wa')}</span><small>WhatsApp</small></a>
     </div>
   </div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.5 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.6 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
