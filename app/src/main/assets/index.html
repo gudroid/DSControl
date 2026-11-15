@@ -513,18 +513,29 @@ const LIC={
 const WHATS='5599984003657';
 const CONFIG_URL='https://raw.githubusercontent.com/gudroid/dscontrol-config/main/config.json';
 const RC={
-  read(){return LS.get('dsc_cfg',{mode:'free',issue:-1})},
+  born(){let b=LS.get('dsc_born',0);if(!b){b=Date.now();LS.set('dsc_born',b)}return b},
+  ageDays(){return Math.floor((Date.now()-this.born())/DAY)},
+  read(){return LS.get('dsc_cfg2',{mode:'free',blockDays:0,notice:'',noticeId:0,ping:'',issue:-1})},
   mode(){return this.read().mode||'free'},
   async fetch(){
-    try{const r=await fetch(CONFIG_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const txt=await r.text();
-      const i=txt.indexOf('DSCFG.');if(i<0)return;let k=txt.slice(i+6);const AL='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';let e=0;while(e<k.length&&AL.indexOf(k[e])>=0)e++;k=k.slice(0,e);
-      const raw=Uint8Array.from(atob(k.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
-      if(raw.length!==72)return;const pay=raw.slice(0,8),sig=raw.slice(8,72);
-      if(pay[0]!==67||!await LIC.verify(pay,sig))return;
-      const issue=(pay[2]<<8)|pay[3];const cur=this.read();if(issue>=cur.issue)LS.set('dsc_cfg',{mode:pay[1]===1?'paid':'free',issue});
+    try{
+      const r=await fetch(CONFIG_URL+'?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+      const txt=await r.text();const m=txt.match(/DSCFG2\.([A-Za-z0-9\-_]+)\.([A-Za-z0-9\-_]+)/);if(!m)return;
+      const jb=Uint8Array.from(atob(m[1].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+      const sig=Uint8Array.from(atob(m[2].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+      if(sig.length!==64||!await LIC.verify(jb,sig))return;
+      const j=JSON.parse(new TextDecoder().decode(jb));const cur=this.read();
+      if((j.issue||0)>=(cur.issue||-1))LS.set('dsc_cfg2',Object.assign({mode:'free',blockDays:0,notice:'',noticeId:0,ping:'',issue:0},j));
     }catch(e){}
-  }
+  },
+  ping(){const cfg=this.read();if(!cfg.ping)return;try{fetch(cfg.ping+(cfg.ping.includes('?')?'&':'?')+'code='+encodeURIComponent(LIC.code)+'&v=4.3&age='+this.ageDays(),{cache:'no-store',mode:'no-cors'})}catch(e){}}
 };
+function checkNotice(){
+  const cfg=RC.read();if(!cfg.notice||!cfg.noticeId)return;
+  if((LS.get('dsc_noticeSeen',0)||0)>=cfg.noticeId)return;
+  const d=sheet(`<h3>Aviso do @guucds</h3><p style="white-space:pre-wrap">${esc(cfg.notice)}</p><button class="bigbtn" id="noticeok">${ic('check')} Entendi</button>`);
+  d.querySelector('#noticeok').onclick=()=>{LS.set('dsc_noticeSeen',cfg.noticeId);closeSheet()};
+}
 
 
 /* ================= ESTADO ================= */
@@ -1347,8 +1358,10 @@ function Settings(){
 
 /* ================= LICENÇA: banner + tela ================= */
 function licBanner(){
-  if(!NATIVE||RC.mode()!=='paid')return '';const st=LIC.state();
+  if(!NATIVE)return '';const cfg=RC.read();if(cfg.mode!=='paid')return '';
+  const st=LIC.state();
   if(st==='active'&&LIC.leftDays()<=3)return `<div class="licbanner warn">${ic('clock')}<span>Seu aluguel vence em ${LIC.leftDays()>1?LIC.leftDays()+' dias':LIC.leftHours()+' h'}. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Renovar</b></span></div>`;
+  if(st!=='active'){const age=RC.ageDays(),bd=cfg.blockDays||0;if(age<bd)return `<div class="licbanner warn">${ic('clock')}<span>Período grátis: faltam <b>${bd-age} dia(s)</b>. Depois você precisa de uma chave. <b data-do="activate" style="color:#ffd98a;text-decoration:underline">Ver planos</b></span></div>`;}
   return '';
 }
 function setConn(){
@@ -1384,7 +1397,10 @@ function askPlan(i){const p=PLANS[i];const msg='Olá @guucds! Quero o plano *'+p
 function gateCheck(silent){
   const g=$('#gate');
   if(!NATIVE){g.className='';g.innerHTML='';return}   // navegador = prévia, sem bloqueio
-  if(RC.mode()!=='paid'){g.className='';g.innerHTML='';return}   // modo grátis = liberado p/ todos
+  const _cfg=RC.read();
+  if(_cfg.mode!=='paid'){g.className='';g.innerHTML='';return}   // modo grátis = liberado p/ todos
+  if(LIC.active()){g.className='';g.innerHTML='';return}
+  if(RC.ageDays()<(_cfg.blockDays||0)){g.className='';g.innerHTML='';return}   // ainda no período de carência
   LIC.tick();const st=LIC.state();
   if(st==='active'){g.className='';g.innerHTML='';return}
   if(silent&&g.classList.contains('on'))return;
@@ -1602,10 +1618,12 @@ async function boot(){
   try{await LIC.init()}catch(e){}
   renderAll();
   try{await RC.fetch()}catch(e){}
+  RC.ping();checkNotice();
   gateCheck();renderAll();
   if(NATIVE&&S.autoconn&&S.mode==='off'){setTimeout(()=>{try{window.AndroidBLE.autoConnect&&window.AndroidBLE.autoConnect()}catch(e){}},900)}
   setInterval(()=>{try{LIC.tick();gateCheck(true)}catch(e){}},60000);
-  setInterval(()=>{RC.fetch().then(()=>gateCheck(true))},3600000);
+  setInterval(()=>RC.ping(),120000);
+  setInterval(()=>{RC.fetch().then(()=>{gateCheck(true);checkNotice()})},1800000);
 }
 boot();
 
