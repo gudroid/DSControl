@@ -590,7 +590,7 @@ const tkey=t=>t.folder+'|'+t.name;
 
 /* ===== PROTOCOLO / CONEXÃO / BIBLIOTECA / CAPAS ===== */
 const NATIVE=!!window.AndroidBLE;
-const APP_VERSION='4.8';
+const APP_VERSION='4.9';
 function cmpVer(a,b){a=String(a||'0').split('.').map(Number);b=String(b||'0').split('.').map(Number);for(let i=0;i<Math.max(a.length,b.length);i++){const x=a[i]||0,y=b[i]||0;if(x!==y)return x-y}return 0}
 const req=(letter,idx)=>{const b=new Uint8Array(8).fill(0x30);b[0]=0x52;b[6]=letter.charCodeAt(0);if(idx!=null){b[2]=(idx>>8)&255;b[3]=idx&255}return b};
 const upd=letter=>{const b=new Uint8Array(16).fill(0x30);b[0]=0x53;b[6]=letter.charCodeAt(0);return b};
@@ -692,9 +692,13 @@ async function afterConnect(){
   }
   renderAll();
   if(!BLE.gotStatus){askPassword();return}
-  if(!S.status.total)toast('Conectado. Nenhuma música no USB (pendrive inserido?)');
-  readGeneral();
-  startScanIfNeeded();
+  await readGeneral();            // lê a fonte REAL do aparelho (USB/BT/RCA) antes de decidir
+  if(S.source==='1'){             // só lê o pendrive se o aparelho estiver no USB
+    if(!S.status.total)toast('Conectado. Nenhuma música no USB (pendrive inserido?)');
+    startScanIfNeeded();
+  }else{
+    toast('Aparelho na fonte '+(SOURCES.find(s=>s[0]===S.source)?.[1]||'?')+'. Toque em USB para ler o pendrive.');
+  }
   renderAll();
 }
 // volume real do aparelho (pergunta '1')
@@ -831,7 +835,7 @@ function setVolume(v){
   S.volume=v;LS.set('dsp_vol',v);
   clearTimeout(volT);volT=setTimeout(()=>{const b=upd('1');b[4]=S.volume;send(b,'volume')},250);
 }
-function setSource(code){S.source=code;LS.set('dsp_src',code);const b=upd('2');b[4]=code.charCodeAt(0);send(b,'fonte');renderAll();toast('Fonte: '+SOURCES.find(s=>s[0]===code)[1])}
+function setSource(code){S.source=code;LS.set('dsp_src',code);const b=upd('2');b[4]=code.charCodeAt(0);send(b,'fonte');renderAll();toast('Fonte: '+SOURCES.find(s=>s[0]===code)[1]);if(code==='1'&&S.mode==='ble'){toast('Lendo o pendrive…');setTimeout(async()=>{BLE.fails=0;await pollStatus(true);startScanIfNeeded();renderAll()},900)}}
 function setPMode(m){S.pmode=m;LS.set('dsp_pmode',m);const b=upd('5');b[5]=m;send(b,'modo');renderAll()}
 function setPower(on){S.power=on;LS.set('dsp_power',on);const b=upd('P');b[2]=on?1:0;send(b,on?'ligar':'desligar');if(!on)S.playing=false;renderAll();toast(on?'Ligando o aparelho':'Desligando o aparelho')}
 let sensT={};
@@ -1384,7 +1388,7 @@ function Settings(){
       <a class="soc wa" href="https://wa.me/${WHATS}" target="_blank"><span class="orb">${ic('wa')}</span><small>WhatsApp</small></a>
     </div>
   </div>
-  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.8 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
+  <div class="card"><div class="label">Sobre</div><p class="note">DS Control v4.9 • by @guucds<br>Stetsom DS Player (HL 400.4, HL 800.4, CL 800.4, CL 400.4 24V, BOB 400.4 AC, PROC 400.4).</p></div>`;
 }
 
 /* ================= LICENÇA: banner + tela ================= */
